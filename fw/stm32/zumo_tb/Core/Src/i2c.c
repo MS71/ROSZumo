@@ -193,6 +193,103 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 
 /* USER CODE BEGIN 1 */
 
+enum { stop, waiting, getRegisterAddress, getData, sendData } transferState = stop;
+uint8_t registerAddress = 0;
+
+#define I2C_BUFFER_SIZE 256
+uint16_t i2c_buffer[I2C_BUFFER_SIZE] = {};
+
+uint16_t receiveBuffer;
+
+void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t addrMatchCode) {
+	uint8_t transmitBuffer[2] = {};
+	switch (direction) {
+	case I2C_DIRECTION_TRANSMIT:
+		transferState = getRegisterAddress;
+		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 1, I2C_FIRST_FRAME) != HAL_OK) {
+			//Error();
+		}
+		break;
+
+	case I2C_DIRECTION_RECEIVE:
+		transferState = sendData;
+
+		if( (registerAddress) < I2C_BUFFER_SIZE )
+		{
+			transmitBuffer[1] = (i2c_buffer[registerAddress]>>8)&0xff;
+			transmitBuffer[0] = (i2c_buffer[registerAddress]>>0)&0xff;
+		}
+		else
+		{
+			transmitBuffer[0] = 0xff;
+			transmitBuffer[1] = 0xff;
+		}
+
+		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 2, I2C_LAST_FRAME) != HAL_OK) {
+			// Error here!!! (HAL_BUSY)
+			//Error();
+		}
+		break;
+	}
+}
+
+
+
+void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
+	switch (transferState) {
+	case getRegisterAddress:
+		registerAddress = receiveBuffer;
+		transferState = getData;
+		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 2, I2C_FIRST_FRAME) != HAL_OK) {
+			//Error();
+		}
+		break;
+
+	case getData:
+		//if (!registerWriteEvent(registerAddress, receiveBuffer)) {
+		//				Error();
+		//}
+
+		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 2, I2C_FIRST_FRAME) != HAL_OK) {
+			//Error();
+		} else if( (registerAddress>>1) < 64 ) {
+			i2c_buffer[registerAddress] = receiveBuffer;
+		}
+		break;
+	}
+}
+
+
+
+void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *hi2c) {
+	HAL_I2C_EnableListen_IT(hi2c); // Restart
+}
+
+
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
+	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_AF) {
+		//Error();
+	}
+}
+
+void API_I2C1_Init(void)
+{
+	transferState = waiting;
+
+	int i;
+	for(i=0;i<I2C_BUFFER_SIZE;i++)
+	{
+		i2c_buffer[i] = i | ((0xff-i)<<8);
+	}
+
+	if(HAL_I2C_EnableListen_IT(&hi2c1) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
