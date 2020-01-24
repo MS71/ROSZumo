@@ -22,6 +22,18 @@
 
 /* USER CODE BEGIN 0 */
 
+/*
+ * DS1307
+
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f    0123456789abcdef
+00: 33 15 00 01 01 01 00 00 03 33 2a 28 00 32 1c 88    3?.???..?3*(.2??
+10: 00 1a 00 00 00 00 00 00 00 00 00 00 00 00 00 00    .?..............
+20: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+30: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00    ................
+
+ */
+
+
 /* USER CODE END 0 */
 
 I2C_HandleTypeDef hi2c1;
@@ -196,8 +208,12 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 enum { stop, waiting, getRegisterAddress, getData, sendData } transferState = stop;
 uint8_t registerAddress = 0;
 
-#define I2C_BUFFER_SIZE 256
-uint16_t i2c_buffer[I2C_BUFFER_SIZE] = {};
+#define I2C_BUFFER_SIZE 1024
+union {
+	uint8_t u8[I2C_BUFFER_SIZE];
+	uint16_t u16[I2C_BUFFER_SIZE/2];
+	uint32_t u32[I2C_BUFFER_SIZE/4];
+} i2c_buffer = {};
 
 uint16_t receiveBuffer;
 
@@ -216,8 +232,8 @@ void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t a
 
 		if( (registerAddress) < I2C_BUFFER_SIZE )
 		{
-			transmitBuffer[1] = (i2c_buffer[registerAddress]>>8)&0xff;
-			transmitBuffer[0] = (i2c_buffer[registerAddress]>>0)&0xff;
+			transmitBuffer[1] = API_I2C1_u8Get(2*registerAddress+0);
+			transmitBuffer[0] = API_I2C1_u8Get(2*registerAddress+1);
 		}
 		else
 		{
@@ -253,7 +269,8 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 2, I2C_FIRST_FRAME) != HAL_OK) {
 			//Error();
 		} else if( (registerAddress>>1) < 64 ) {
-			i2c_buffer[registerAddress] = receiveBuffer;
+			API_I2C1_u16Set(registerAddress,receiveBuffer);
+			//i2c_buffer.u16[registerAddress] = receiveBuffer;
 		}
 		break;
 	}
@@ -273,15 +290,46 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
 	}
 }
 
+uint8_t API_I2C1_u8Get(uint16_t addr)
+{
+	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	return i2c_buffer.u8[addr];
+}
+
+uint16_t API_I2C1_u16Get(uint16_t addr)
+{
+	if( (I2C_BUFFER_SIZE/2) < addr ) return 0;
+	return i2c_buffer.u16[addr];
+}
+
+uint32_t API_I2C1_u32Get(uint16_t addr)
+{
+	if( (I2C_BUFFER_SIZE/4) < addr ) return 0;
+	return i2c_buffer.u32[addr];
+}
+
+void API_I2C1_u8Set(uint16_t addr, uint8_t data)
+{
+	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	i2c_buffer.u8[addr] = data;
+}
+
+void API_I2C1_u16Set(uint16_t addr, uint16_t data)
+{
+	if( (I2C_BUFFER_SIZE/2) < addr ) return 0;
+	i2c_buffer.u16[addr] = data;
+}
+
+void API_I2C1_u32Set(uint16_t addr, uint32_t data)
+{
+	if( (I2C_BUFFER_SIZE/4) < addr ) return 0;
+	i2c_buffer.u32[addr] = data;
+}
+
 void API_I2C1_Init(void)
 {
 	transferState = waiting;
-
-	int i;
-	for(i=0;i<I2C_BUFFER_SIZE;i++)
-	{
-		i2c_buffer[i] = i | ((0xff-i)<<8);
-	}
+	memset(&i2c_buffer,0,sizeof(i2c_buffer));
 
 	if(HAL_I2C_EnableListen_IT(&hi2c1) != HAL_OK)
 	{

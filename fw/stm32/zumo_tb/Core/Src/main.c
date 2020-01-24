@@ -151,12 +151,15 @@ int main(void)
 
 	ui_init();
 
+	API_I2C1_Init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
+		//API_I2C1_u32Set(API_I2C1_u32Get(I2C_REG_TB_U32_LOOP_CNT)+1);
 		ui_loop();
 
 #if 0
