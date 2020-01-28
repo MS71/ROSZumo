@@ -34,93 +34,37 @@
 #define UI_CHAR_WIDTH 	(UI_CHAR_SIZE*CHAR_WIDTH)
 #define UI_CHAR_HEIGHT 	(UI_CHAR_SIZE*CHAR_HEIGHT)
 
-#define ADC_CONVERTED_DATA_BUFFER_SIZE 5
-__IO   uint16_t   aADCxConvertedData[ADC_CONVERTED_DATA_BUFFER_SIZE]; /* ADC group regular conversion data (array of data) */
-
 static uint32_t ui_time()
 {
 	return HAL_GetTick();
 }
 
-enum { POWER_OFF, POWER_ON, POWER_AUTO } power_mode = POWER_ON;
-uint8_t power_mode_changed = 1;
-uint32_t power_auto_offtimeout = 0;
-
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
 	if( KEY2_Pin == GPIO_Pin )
 	{
-		switch( power_mode )
+		uint8_t m = API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE_NEXT);
+		if( m == PWRMODE_UNDEF )
 		{
-		case POWER_OFF:
-			power_mode = POWER_ON;
-			power_mode_changed = 1;
-			break;
-		case POWER_ON:
-			power_mode = POWER_AUTO;
-			power_mode_changed = 1;
-			break;
-		case POWER_AUTO:
-			power_mode = POWER_OFF;
-			power_mode_changed = 1;
-			power_auto_offtimeout = 0;
-			break;
+			m = API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE);
+		}
+		switch( m )
+		{
 		default:
-			power_mode = POWER_OFF;
-			power_mode_changed = 1;
+		case PWRMODE_OFF:
+			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_ON);
+			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
+			break;
+		case PWRMODE_ON:
+			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_AUTO);
+			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
+			break;
+		case PWRMODE_AUTO:
+			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_OFF);
+			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
 			break;
 		}
 	}
-}
-
-uint8_t ubDmaTransferStatus = 0;
-/**
-  * @brief  Conversion complete callback in non blocking mode
-  * @param  hadc: ADC handle
-  * @note   This example shows a simple way to report end of conversion
-  *         and get conversion result. You can add your own implementation.
-  * @retval None
-  */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
-{
-  /* Update status variable of DMA transfer */
-  ubDmaTransferStatus = 1;
-
-  /* Set LED depending on DMA transfer status */
-  /* - Turn-on if DMA transfer is completed */
-  /* - Turn-off if DMA transfer is not completed */
-  //BSP_LED_On(LED1);
-}
-
-/**
-  * @brief  Conversion DMA half-transfer callback in non blocking mode
-  * @note   This example shows a simple way to report end of conversion
-  *         and get conversion result. You can add your own implementation.
-  * @retval None
-  */
-void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef *hadc)
-{
-  /* Set LED depending on DMA transfer status */
-  /* - Turn-on if DMA transfer is completed */
-  /* - Turn-off if DMA transfer is not completed */
-  //BSP_LED_Off(LED1);
-}
-
-/**
-  * @brief  ADC error callback in non blocking mode
-  *        (ADC conversion with interruption or transfer by DMA)
-  * @param  hadc: ADC handle
-  * @retval None
-  */
-void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
-{
-  /* In case of ADC error, call main error handler */
-  Error_Handler();
-}
-
-uint8_t ui_sleepmode()
-{
-	return (power_mode==POWER_OFF)?1:0;
 }
 
 void ui_update(uint8_t bInit)
@@ -165,16 +109,31 @@ void ui_update(uint8_t bInit)
 	}
 
 	{
+		if( API_I2C1_u8Get(I2C_REG_TB_U8_PWRCNTDWN) != 0 )
+		{
+			sprintf(tmpstr,"%02d",API_I2C1_u8Get(I2C_REG_TB_U8_PWRCNTDWN));
+		}
+		else
+		{
+			sprintf(tmpstr,"  ",API_I2C1_u8Get(I2C_REG_TB_U8_PWRCNTDWN));
+		}
+		ILI9341_Draw_Text(tmpstr, UI_W-2*UI_CHAR_WIDTH, 0*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 		ILI9341_Draw_Text("PWR:", UI_W-4*UI_CHAR_WIDTH, 1*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-		if( power_mode == POWER_OFF )
+
+		uint8_t m = API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE_NEXT);
+		if( m == PWRMODE_UNDEF )
+		{
+			m = API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE);
+		}
+		if( m == PWRMODE_OFF )
 		{
 			ILI9341_Draw_Text(" OFF", UI_W-4*UI_CHAR_WIDTH, 2*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
-		else if( power_mode == POWER_ON )
+		else if(m == PWRMODE_ON )
 		{
 			ILI9341_Draw_Text("  ON", UI_W-4*UI_CHAR_WIDTH, 2*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
-		else if( power_mode == POWER_AUTO )
+		else if( m == PWRMODE_AUTO )
 		{
 			ILI9341_Draw_Text("AUTO", UI_W-4*UI_CHAR_WIDTH, 2*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
@@ -184,180 +143,33 @@ void ui_update(uint8_t bInit)
 		}
 	}
 
-#if 1
-    /* Start ADC conversion */
-    /* Since sequencer is enabled in discontinuous mode, this will perform    */
-    /* the conversion of the next rank in sequencer.                          */
-    /* Note: For this example, conversion is triggered by software start,     */
-    /*       therefore "HAL_ADC_Start()" must be called for each conversion.  */
-    /*       Since DMA transfer has been initiated previously by function     */
-    /*       "HAL_ADC_Start_DMA()", this function will keep DMA transfer      */
-    /*       active.                                                          */
-
-    if (HAL_ADC_Start(&hadc1) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    /* Wait for ADC conversion and DMA transfer completion (update of variable ubDmaTransferStatus) */
-    HAL_Delay(1);
-
-    /* Check whether ADC has converted all ranks of the sequence */
-    if (ubDmaTransferStatus == 1)
-    {
-      /* Computation of ADC conversions raw data to physical values           */
-      /* using LL ADC driver helper macro.                                    */
-      /* Note: ADC results are transferred into array "aADCxConvertedData"  */
-      /*       in the order of their rank in ADC sequencer.                   */
-      {
-    	  int r = 3;
-    	  int u;
-
-		  uint16_t vdda = __LL_ADC_CALC_VREFANALOG_VOLTAGE( aADCxConvertedData[3], LL_ADC_RESOLUTION_12B);
-
-    	  int Rx = 21;
-    	  u = ((100+Rx)*(uint32_t)__LL_ADC_CALC_DATA_TO_VOLTAGE(vdda, aADCxConvertedData[1], LL_ADC_RESOLUTION_12B)/Rx);
-    	  sprintf(tmpstr,"UBAT:%4d",(int)u);
-    	  if( u > (4*1200) )
-    	  {
-        	  ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, GREEN, UI_CHAR_SIZE, UI_BG_COLOR);
-    	  }
-    	  else if( u > (4*1100) )
-    	  {
-        	  ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, YELLOW, UI_CHAR_SIZE, UI_BG_COLOR);
-    	  }
-    	  else
-    	  {
-        	  ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, RED, UI_CHAR_SIZE, UI_BG_COLOR);
-    	  }
-
-    	  sprintf(tmpstr,"UCH:%4d",(int)((100+Rx)*(uint32_t)__LL_ADC_CALC_DATA_TO_VOLTAGE(vdda, aADCxConvertedData[0], LL_ADC_RESOLUTION_12B)/Rx));
-    	  ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-
-    	  sprintf(tmpstr,"Temp:%2d",(int)__LL_ADC_CALC_TEMPERATURE(vdda, aADCxConvertedData[2], LL_ADC_RESOLUTION_12B));
-    	  ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-      }
-
-      /* Update status variable of DMA transfer */
-      ubDmaTransferStatus = 0;
-    }
-
-#endif
-#if 0
-	float vdda = 3.0;
-
-#if 0
-	HAL_ADC_Start(&hadc1);
-	HAL_ADCEx_Calibration_Start(&hadc1);
-
 	{
-		ADC_ChannelConfTypeDef   sConfig;
-		sConfig.Channel      = ADC_CHANNEL_VREFINT;    /* ADC channel selection */
-		sConfig.Rank         = ADC_REGULAR_RANK_1;        /* ADC group regular rank in which is mapped the selected ADC channel */
-		sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1; /* ADC channel sampling time */
+		int r = 3;
+		int u;
 
-		if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK)
+		u = API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_MV);
+		sprintf(tmpstr,"UBAT:%4d",(int)u);
+		if( u > (4*1200) )
 		{
-			if( HAL_ADC_PollForConversion(&hadc1,HAL_MAX_DELAY) == HAL_OK )
-			{
-				vdda = ((3.0 * HAL_ADCEx_Calibration_GetValue(&hadc1)) / HAL_ADC_GetValue(&hadc1));
-				ILI9341_Draw_Text("Vdda:", 0, 1+3*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-				sprintf(tmpstr,"%f ",vdda);
-				ILI9341_Draw_Text(tmpstr, 0, 1+4*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-			}
-			else
-			{
-				ADC_ConversionStop(&hadc1);
-			}
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, GREEN, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
-	}
-
-	HAL_ADC_Stop(&hadc1);
-#endif
-
-	HAL_ADC_Start(&hadc1);
-
-	{
-		ADC_ChannelConfTypeDef   sConfig;
-		sConfig.Channel      = ADC_CHANNEL_0;		  /* ADC channel selection */
-		sConfig.Rank         = ADC_REGULAR_RANK_1;        /* ADC group regular rank in which is mapped the selected ADC channel */
-		sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1; /* ADC channel sampling time */
-
-		if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK)
+		else if( u > (4*1100) )
 		{
-			if( HAL_ADC_PollForConversion(&hadc1,HAL_MAX_DELAY) == HAL_OK )
-			{
-				uint32_t v = (int)((1000.0 * vdda * HAL_ADC_GetValue(&hadc1)) / 4095);
-				sprintf(tmpstr,"% 4d",(int)v);
-				ILI9341_Draw_Text("Ubat:", 0, 1+5*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-				ILI9341_Draw_Text(tmpstr, 0, 1+6*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-			}
-			else
-			{
-				ADC_ConversionStop(&hadc1);
-			}
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, YELLOW, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
-	}
-
-	HAL_ADC_Stop(&hadc1);
-	HAL_ADC_Start(&hadc1);
-
-	{
-		ADC_ChannelConfTypeDef   sConfig;
-		sConfig.Channel      = ADC_CHANNEL_VBAT;          /* ADC channel selection */
-		sConfig.Rank         = ADC_REGULAR_RANK_1;        /* ADC group regular rank in which is mapped the selected ADC channel */
-		sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_1; /* ADC channel sampling time */
-
-		if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK)
+		else
 		{
-			if( HAL_ADC_PollForConversion(&hadc1,HAL_MAX_DELAY) == HAL_OK )
-			{
-				uint32_t v = (int)((1000.0 * vdda * HAL_ADC_GetValue(&hadc1)) / 4095);
-				ILI9341_Draw_Text("VBat:", 0, 1+7*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-				sprintf(tmpstr,"%d ",(int)v);
-				ILI9341_Draw_Text(tmpstr, 0, 1+8*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-			}
-			else
-			{
-				ADC_ConversionStop(&hadc1);
-			}
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, RED, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
+
+		u = API_I2C1_u16Get(I2C_REG_TB_U16_UCHARGE_MV);
+		sprintf(tmpstr,"UCH:%4d",u);
+		ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
+
+		u = API_I2C1_u16Get(I2C_REG_TB_U16_TEMP_C);
+		sprintf(tmpstr,"Temp:%2d",u);
+		ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 	}
-
-	HAL_ADC_Stop(&hadc1);
-#if 1
-	HAL_ADC_Start(&hadc1);
-
-#define ADDR_TS_CAL1 ((uint16_t*) ((uint32_t)0x1FFF75A8)) /* 30 deg */
-#define ADDR_TS_CAL2 ((uint16_t*) ((uint32_t)0x1FFF75CA)) /* 110 deg */
-
-	{
-		ADC_ChannelConfTypeDef   sConfig;
-		sConfig.Channel      = ADC_CHANNEL_TEMPSENSOR;          /* ADC channel selection */
-		sConfig.Rank         = ADC_REGULAR_RANK_1;        /* ADC group regular rank in which is mapped the selected ADC channel */
-		sConfig.SamplingTime = ADC_SAMPLINGTIME_COMMON_2; /* ADC channel sampling time */
-
-		if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) == HAL_OK)
-		{
-			if( HAL_ADC_PollForConversion(&hadc1,HAL_MAX_DELAY) == HAL_OK )
-			{
-				float v = HAL_ADC_GetValue(&hadc1);
-				v = (1.0*((110.0-30.0)/((*ADDR_TS_CAL2) - (*ADDR_TS_CAL1)))) * (v-(*ADDR_TS_CAL1)) + 30.0;
-				ILI9341_Draw_Text("Temp:", 0, 1+9*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-				sprintf(tmpstr,"%f ",v);
-				ILI9341_Draw_Text(tmpstr, 0, 1+10*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
-			}
-			else
-			{
-				ADC_ConversionStop(&hadc1);
-			}
-		}
-	}
-
-	HAL_ADC_Stop(&hadc1);
-#endif
-#endif
-
 }
 
 
@@ -366,21 +178,6 @@ void ui_init()
 	ILI9341_Init();	//initial driver setup to drive ili9341
 	ILI9341_Fill_Screen(UI_BG_COLOR);
 	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_2);
-
-	  if (HAL_ADCEx_Calibration_Start(&hadc1) != HAL_OK)
-	  {
-	    /* Calibration Error */
-	    Error_Handler();
-	  }
-
-	  if (HAL_ADC_Start_DMA(&hadc1,
-	                        (uint32_t *)aADCxConvertedData,
-	                        ADC_CONVERTED_DATA_BUFFER_SIZE
-	                       ) != HAL_OK)
-	  {
-	    /* ADC conversion start error */
-	    Error_Handler();
-	  }
 
 	ui_update(1);
 }

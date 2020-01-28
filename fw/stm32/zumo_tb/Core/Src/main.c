@@ -36,6 +36,7 @@
 /* USER CODE BEGIN Includes */
 
 #include "ui.h"
+#include "pm.h"
 
 /* USER CODE END Includes */
 
@@ -147,11 +148,13 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
-	HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_RESET);
 
-	ui_init();
+  pm_init();
+  ui_init();
 
-	API_I2C1_Init();
+  API_I2C1_Init();
+  API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0x0000);
 
   /* USER CODE END 2 */
 
@@ -159,23 +162,32 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		//API_I2C1_u32Set(API_I2C1_u32Get(I2C_REG_TB_U32_LOOP_CNT)+1);
-		ui_loop();
+		API_I2C1_u32Set(I2C_REG_TB_U32_LOOP_CNT,API_I2C1_u32Get(I2C_REG_TB_U32_LOOP_CNT)+1);
 
-#if 0
-		if( ui_sleepmode() )
+		if(API_I2C1_u8WRFlag(I2C_REG_TB_U16_VL53L1X_RSTREG)!=0)
 		{
-			HAL_GPIO_WritePin(O_LED2_GPIO_Port,O_LED2_Pin,GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_SET);
+			int bit=0;
+			uint16_t r = API_I2C1_u16Get(I2C_REG_TB_U16_VL53L1X_RSTREG);
+			HAL_GPIO_WritePin(O_L_RST_0_GPIO_Port,O_L_RST_0_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_1_GPIO_Port,O_L_RST_1_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_2_GPIO_Port,O_L_RST_2_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_3_GPIO_Port,O_L_RST_3_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_4_GPIO_Port,O_L_RST_4_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_5_GPIO_Port,O_L_RST_5_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_6_GPIO_Port,O_L_RST_6_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_7_GPIO_Port,O_L_RST_7_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_8_GPIO_Port,O_L_RST_8_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_9_GPIO_Port,O_L_RST_9_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_10_GPIO_Port,O_L_RST_10_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(O_L_RST_11_GPIO_Port,O_L_RST_11_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
 
-			HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-
-			SystemClock_Config();
-
-			HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_RESET);
-			ui_init();
+			bit=15;
+			HAL_GPIO_WritePin(O_BNO055_RESET_GPIO_Port,O_BNO055_RESET_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
 		}
-#endif
+
+		ui_loop();
+		pm_loop();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

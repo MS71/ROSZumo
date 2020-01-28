@@ -35,8 +35,25 @@ extern I2C_HandleTypeDef hi2c2;
 
 /* USER CODE BEGIN Private defines */
 
-#define I2C_REG_DS1307_REG0 		0x0000
-#define I2C_REG_TB_U32_LOOP_CNT		0x0040
+#define I2C_REG_DS1307_REG0 				0x0000
+
+#define I2C_REG_TB_U32_LOOP_CNT				0x0040
+#define I2C_REG_TB_U8_PWRMODE				0x0044
+#define PWRMODE_UNDEF	0x00
+#define PWRMODE_OFF		0x01
+#define PWRMODE_ON		0x02
+#define PWRMODE_AUTO	0x03
+#define PWRMODE_DEFAULT	PWRMODE_ON
+#define I2C_REG_TB_U8_PWRCNTDWN				0x0045
+#define PWRCNTDWN_START	  10
+#define I2C_REG_TB_U8_PWRMODE_NEXT			0x0046
+
+#define I2C_REG_TB_U16_UBAT_MV				0x0050
+#define I2C_REG_TB_U16_UCHARGE_MV			0x0052
+#define I2C_REG_TB_U16_TEMP_C				0x0054
+
+#define I2C_REG_TB_U16_VL53L1X_RSTREG		0x0060
+
 /* USER CODE END Private defines */
 
 void MX_I2C1_Init(void);
@@ -53,6 +70,8 @@ uint32_t API_I2C1_u32Get(uint16_t addr);
 void API_I2C1_u8Set(uint16_t addr, uint8_t data);
 void API_I2C1_u16Set(uint16_t addr, uint16_t data);
 void API_I2C1_u32Set(uint16_t addr, uint32_t data);
+
+uint8_t API_I2C1_u8WRFlag(uint16_t addr);
 
 /* USER CODE END Prototypes */
 

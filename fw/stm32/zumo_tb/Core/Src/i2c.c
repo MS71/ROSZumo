@@ -215,10 +215,12 @@ union {
 	uint32_t u32[I2C_BUFFER_SIZE/4];
 } i2c_buffer = {};
 
-uint16_t receiveBuffer;
+uint8_t i2c_buffer_wrflag[I2C_BUFFER_SIZE/8] = {};
+
+uint8_t receiveBuffer;
+uint8_t transmitBuffer;
 
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t addrMatchCode) {
-	uint8_t transmitBuffer[2] = {};
 	switch (direction) {
 	case I2C_DIRECTION_TRANSMIT:
 		transferState = getRegisterAddress;
@@ -232,16 +234,15 @@ void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t a
 
 		if( (registerAddress) < I2C_BUFFER_SIZE )
 		{
-			transmitBuffer[1] = API_I2C1_u8Get(2*registerAddress+0);
-			transmitBuffer[0] = API_I2C1_u8Get(2*registerAddress+1);
+			transmitBuffer = API_I2C1_u8Get(registerAddress);
 		}
 		else
 		{
-			transmitBuffer[0] = 0xff;
-			transmitBuffer[1] = 0xff;
+			transmitBuffer = 0xff;
 		}
+		registerAddress++;
 
-		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 2, I2C_LAST_FRAME) != HAL_OK) {
+		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
 			// Error here!!! (HAL_BUSY)
 			//Error();
 		}
@@ -249,28 +250,44 @@ void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t a
 	}
 }
 
+void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+	switch (transferState) {
+	case sendData:
+		if( (registerAddress) < I2C_BUFFER_SIZE )
+		{
+			transmitBuffer = API_I2C1_u8Get(registerAddress);
+		}
+		else
+		{
+			transmitBuffer = 0xff;
+		}
+		registerAddress++;
 
+		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
+			// Error here!!! (HAL_BUSY)
+			//Error();
+		}
+		break;
+	}
+}
 
 void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 	switch (transferState) {
 	case getRegisterAddress:
 		registerAddress = receiveBuffer;
 		transferState = getData;
-		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 2, I2C_FIRST_FRAME) != HAL_OK) {
+		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 1, I2C_FIRST_FRAME) != HAL_OK) {
 			//Error();
 		}
 		break;
 
 	case getData:
-		//if (!registerWriteEvent(registerAddress, receiveBuffer)) {
-		//				Error();
-		//}
-
-		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 2, I2C_FIRST_FRAME) != HAL_OK) {
+		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
 			//Error();
 		} else if( (registerAddress>>1) < 64 ) {
-			API_I2C1_u16Set(registerAddress,receiveBuffer);
-			//i2c_buffer.u16[registerAddress] = receiveBuffer;
+			i2c_buffer_wrflag[registerAddress>>3] |= (1<<(registerAddress&7));
+			API_I2C1_u8Set(registerAddress++,receiveBuffer);
 		}
 		break;
 	}
@@ -290,6 +307,15 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
 	}
 }
 
+uint8_t API_I2C1_u8WRFlag(uint16_t addr)
+{
+	uint8_t ret = 0;
+	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	ret = ((i2c_buffer_wrflag[addr>>3]&(1<<(addr&7)))!=0)?1:0;
+	i2c_buffer_wrflag[addr>>3] &= ~(1<<(addr&7));
+	return ret;
+}
+
 uint8_t API_I2C1_u8Get(uint16_t addr)
 {
 	if( (I2C_BUFFER_SIZE) < addr ) return 0;
@@ -298,32 +324,35 @@ uint8_t API_I2C1_u8Get(uint16_t addr)
 
 uint16_t API_I2C1_u16Get(uint16_t addr)
 {
-	if( (I2C_BUFFER_SIZE/2) < addr ) return 0;
-	return i2c_buffer.u16[addr];
+	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	return i2c_buffer.u16[addr>>1];
 }
 
 uint32_t API_I2C1_u32Get(uint16_t addr)
 {
-	if( (I2C_BUFFER_SIZE/4) < addr ) return 0;
-	return i2c_buffer.u32[addr];
+	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	return i2c_buffer.u32[addr>>2];
 }
 
 void API_I2C1_u8Set(uint16_t addr, uint8_t data)
 {
 	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	i2c_buffer_wrflag[addr>>3] |= (1<<(addr&7));
 	i2c_buffer.u8[addr] = data;
 }
 
 void API_I2C1_u16Set(uint16_t addr, uint16_t data)
 {
-	if( (I2C_BUFFER_SIZE/2) < addr ) return 0;
-	i2c_buffer.u16[addr] = data;
+	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	i2c_buffer_wrflag[addr>>3] |= (1<<(addr&7));
+	i2c_buffer.u16[addr>>1] = data;
 }
 
 void API_I2C1_u32Set(uint16_t addr, uint32_t data)
 {
-	if( (I2C_BUFFER_SIZE/4) < addr ) return 0;
-	i2c_buffer.u32[addr] = data;
+	if( (I2C_BUFFER_SIZE) < addr ) return 0;
+	i2c_buffer_wrflag[addr>>3] |= (1<<(addr&7));
+	i2c_buffer.u32[addr>>2] = data;
 }
 
 void API_I2C1_Init(void)

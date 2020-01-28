@@ -12,6 +12,4 @@ void ui_init();
 void ui_exit();
 void ui_loop();
 
-uint8_t ui_sleepmode();
-
 #endif /* INC_UI_H_ */
