@@ -8,6 +8,8 @@
 #define CMD_ENCODERS            0x04
 #define CMD_LIDAR_SET_PWM       0x05
 #define CMD_GET_STATUS          0x06
+#define CMD_SET_LED             0x07
+#define CMD_PUTCHAR             0x08
 
 Zumo32U4Buzzer            buzzer;
 Zumo32U4Motors            motors;
@@ -34,6 +36,9 @@ void setPwmDutyA(int val) {
 
 void setup()
 {
+  Serial.begin(115200);
+  Serial1.begin(115200);
+  Serial.write("ZUMO: starting ...\n");
   pinMode(13, OUTPUT);
   digitalWrite(13, 0);
 
@@ -104,6 +109,18 @@ void loop()
   enc_r += tmp_r;
   sei();
 
+  // read from port 1, send to port 0:
+  if (Serial1.available()) {
+    int inByte = Serial1.read();
+    Serial.write(inByte);
+  }
+
+  // read from port 0, send to port 1:
+  if (Serial.available()) {
+    int inByte = Serial.read();
+    Serial1.write(inByte);
+  }
+  
 #if 1
   set_sleep_mode(SLEEP_MODE_IDLE);
   sleep_enable();
@@ -169,6 +186,18 @@ void receiveEvent(int howMany)
           setPwmDutyA(v);
         }
         break;
+      case CMD_SET_LED:
+        {
+            ledRed((MSG_UINT8(&msg[0])>>0)&1);
+            ledYellow((MSG_UINT8(&msg[0])>>1)&1);
+            ledGreen((MSG_UINT8(&msg[0])>>2)&1);
+        }
+        break;
+      case CMD_PUTCHAR:
+        {
+            Serial1.write(MSG_UINT8(&msg[0]));
+        }
+        break;        
     }
   }
   ledGreen(0);
