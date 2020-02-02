@@ -31,7 +31,6 @@
 /* USER CODE END Includes */
 
 extern I2C_HandleTypeDef hi2c1;
-extern I2C_HandleTypeDef hi2c2;
 
 /* USER CODE BEGIN Private defines */
 
@@ -47,6 +46,8 @@ extern I2C_HandleTypeDef hi2c2;
 #define I2C_REG_TB_U8_PWRCNTDWN				0x0045
 #define PWRCNTDWN_START	  10
 #define I2C_REG_TB_U8_PWRMODE_NEXT			0x0046
+#define I2C_REG_TB_U8_PWR_TMPON  			0x0047
+#define PWR_TMPON_TIME	  10
 
 #define I2C_REG_TB_U16_UBAT_MV				0x0050
 #define I2C_REG_TB_U16_UCHARGE_MV			0x0052
@@ -57,7 +58,6 @@ extern I2C_HandleTypeDef hi2c2;
 /* USER CODE END Private defines */
 
 void MX_I2C1_Init(void);
-void MX_I2C2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 

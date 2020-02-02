@@ -141,9 +141,9 @@ void ILI9341_Set_Address(uint16_t X1, uint16_t Y1, uint16_t X2, uint16_t Y2)
 void ILI9341_Reset(void)
 {
 	HAL_GPIO_WritePin(LCD_RST_PORT, LCD_RST_PIN, GPIO_PIN_RESET);
-	HAL_Delay(200);
+	HAL_Delay(20);
 	HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_RESET);
-	HAL_Delay(200);
+	HAL_Delay(20);
 	HAL_GPIO_WritePin(LCD_RST_PORT, LCD_RST_PIN, GPIO_PIN_SET);
 }
 
@@ -199,7 +199,7 @@ void ILI9341_Init(void)
 
 	//SOFTWARE RESET
 	ILI9341_Write_Command(0x01);
-	HAL_Delay(1000);
+	HAL_Delay(100);
 
 	//POWER CONTROL A
 	ILI9341_Write_Command(0xCB);
@@ -319,7 +319,7 @@ void ILI9341_Init(void)
 
 	//EXIT SLEEP
 	ILI9341_Write_Command(0x11);
-	HAL_Delay(120);
+	HAL_Delay(10);
 
 	//TURN ON DISPLAY
 	ILI9341_Write_Command(0x29);

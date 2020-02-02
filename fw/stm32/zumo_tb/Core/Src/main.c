@@ -21,12 +21,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
-#include "aes.h"
-#include "crc.h"
 #include "dma.h"
 #include "i2c.h"
-#include "lptim.h"
-#include "rng.h"
 #include "rtc.h"
 #include "spi.h"
 #include "tim.h"
@@ -35,6 +31,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "stm32g0xx_hal_pwr_ex.h"
 #include "ui.h"
 #include "pm.h"
 
@@ -69,40 +66,6 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-/**
- * @brief  System Clock Speed decrease
- *         The system Clock source is shifted from PLL to HSI DIV8
- *         to go down to 2 MHz
- * @param  None
- * @retval None
- */
-void SystemClock_Decrease(void)
-{
-	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-
-	/* Select HSI as system clock source */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK;
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-	if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
-	{
-		/* Initialization Error */
-		Error_Handler();
-	}
-
-	/* Modify HSI to HSI DIV8 */
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-	RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV128;
-	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_OFF;
-	if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-	{
-		/* Initialization Error */
-		Error_Handler();
-	}
-}
-
 /* USER CODE END 0 */
 
 /**
@@ -123,6 +86,8 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
+  pm_early_init();
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -135,33 +100,65 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_I2C2_Init();
-  MX_LPTIM1_Init();
-  MX_LPTIM2_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
-  MX_RNG_Init();
   MX_TIM1_Init();
-  MX_AES_Init();
-  MX_CRC_Init();
   MX_RTC_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_RESET);
 
-  pm_init();
   ui_init();
 
   API_I2C1_Init();
   API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0x0000);
 
+  pm_init();
+
   /* USER CODE END 2 */
+ 
+ 
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
+#if 0
+	    HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_SET);
+		while(1)
+		{
+		    HAL_GPIO_WritePin(O_CHARGE_ON_GPIO_Port,O_CHARGE_ON_Pin,GPIO_PIN_SET);
+			HAL_Delay(1000);
+		    HAL_GPIO_WritePin(O_CHARGE_ON_GPIO_Port,O_CHARGE_ON_Pin,GPIO_PIN_RESET);
+			HAL_Delay(1000);
+		}
+#endif
+
+#if 0
+		HAL_Delay(5000);
+
+		vStandby();
+#endif
+
+#if 0
+		HAL_Delay(5000);
+
+		HAL_GPIO_WritePin(O_LED2_GPIO_Port,O_LED2_Pin,GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_SET);
+
+		HAL_SuspendTick();
+		HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+		HAL_ResumeTick();
+
+		/*
+		 * ... Sleeping ...
+		 */
+		HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_SET);
+		HAL_GPIO_WritePin(O_LED2_GPIO_Port,O_LED2_Pin,GPIO_PIN_SET);
+		SystemClock_Config();
+#endif
+
 		API_I2C1_u32Set(I2C_REG_TB_U32_LOOP_CNT,API_I2C1_u32Get(I2C_REG_TB_U32_LOOP_CNT)+1);
 
 		if(API_I2C1_u8WRFlag(I2C_REG_TB_U16_VL53L1X_RSTREG)!=0)
@@ -187,7 +184,6 @@ int main(void)
 
 		ui_loop();
 		pm_loop();
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -240,14 +236,9 @@ void SystemClock_Config(void)
   }
   /** Initializes the peripherals clocks 
   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1
-                              |RCC_PERIPHCLK_LPTIM2|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_RNG|RCC_PERIPHCLK_ADC
-                              |RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_I2C1
+                              |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_TIM1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
-  PeriphClkInit.Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_PCLK1;
-  PeriphClkInit.Lptim2ClockSelection = RCC_LPTIM2CLKSOURCE_PCLK1;
-  PeriphClkInit.RngClockSelection = RCC_RNGCLKSOURCE_HSI_DIV8;
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_SYSCLK;
   PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLKSOURCE_PCLK1;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
@@ -256,9 +247,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Configure the RNG clock. 
-  */
-  __HAL_RCC_RNGDIV_CONFIG(RCC_RNGCLK_DIV1);
 }
 
 /* USER CODE BEGIN 4 */

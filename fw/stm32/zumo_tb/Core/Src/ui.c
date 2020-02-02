@@ -8,11 +8,7 @@
 
 #include "main.h"
 #include "adc.h"
-#include "aes.h"
-#include "crc.h"
 #include "i2c.h"
-#include "lptim.h"
-#include "rng.h"
 #include "rtc.h"
 #include "spi.h"
 #include "tim.h"
@@ -21,6 +17,7 @@
 #include "5x5_font.h"
 
 #include "ui.h"
+#include "pm.h"
 
 #include "ILI9341_Touchscreen.h"
 #include "ILI9341_STM32_Driver.h"
@@ -37,34 +34,6 @@
 static uint32_t ui_time()
 {
 	return HAL_GetTick();
-}
-
-void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
-{
-	if( KEY2_Pin == GPIO_Pin )
-	{
-		uint8_t m = API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE_NEXT);
-		if( m == PWRMODE_UNDEF )
-		{
-			m = API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE);
-		}
-		switch( m )
-		{
-		default:
-		case PWRMODE_OFF:
-			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_ON);
-			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
-			break;
-		case PWRMODE_ON:
-			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_AUTO);
-			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
-			break;
-		case PWRMODE_AUTO:
-			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_OFF);
-			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
-			break;
-		}
-	}
 }
 
 void ui_update(uint8_t bInit)
@@ -149,11 +118,15 @@ void ui_update(uint8_t bInit)
 
 		u = API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_MV);
 		sprintf(tmpstr,"UBAT:%4d",(int)u);
-		if( u > (4*1200) )
+		if( u > UBAT_FULL )
 		{
 			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, GREEN, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
-		else if( u > (4*1100) )
+		else if( u > UBAT_MID )
+		{
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, CYAN, UI_CHAR_SIZE, UI_BG_COLOR);
+		}
+		else if( u > UBAT_MIN )
 		{
 			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, YELLOW, UI_CHAR_SIZE, UI_BG_COLOR);
 		}

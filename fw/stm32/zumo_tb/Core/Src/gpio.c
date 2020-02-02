@@ -38,6 +38,7 @@
      PC5   ------> USART1_RX
      PB0   ------> USART3_RX
      PB2   ------> USART3_TX
+     PB10   ------> I2C2_SCL
      PD0   ------> S_TIM16_CH1
      PB8   ------> SPI2_SCK
      PB9   ------> SPI2_NSS
@@ -136,21 +137,34 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PBPin PBPin PBPin PBPin 
-                           PBPin PBPin PBPin PBPin 
-                           PBPin */
-  GPIO_InitStruct.Pin = O_L_RST_1_Pin|O_L_RST_10B12_Pin|O_L_RST_11_Pin|ZUMO_SHDN_Pin 
-                          |O_L_RST_3_Pin|O_L_RST_4_Pin|O_L_RST_5_Pin|O_L_RST_6_Pin 
-                          |O_L_RST_7_Pin;
+                           PBPin PBPin PBPin PBPin */
+  GPIO_InitStruct.Pin = O_L_RST_1_Pin|O_L_RST_10B12_Pin|O_L_RST_11_Pin|O_L_RST_3_Pin 
+                          |O_L_RST_4_Pin|O_L_RST_5_Pin|O_L_RST_6_Pin|O_L_RST_7_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = SCL2_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF6_I2C2;
+  HAL_GPIO_Init(SCL2_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = I_BUS_FON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(I_BUS_FON_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = ZUMO_SHDN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(ZUMO_SHDN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PDPin PDPin PDPin PDPin 
                            PDPin PDPin PDPin PDPin */

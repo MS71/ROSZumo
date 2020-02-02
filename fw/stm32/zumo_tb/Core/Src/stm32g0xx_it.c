@@ -129,6 +129,7 @@ void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
+#if 0
 	static uint32_t TimingDelay = 0;
 	if (TimingDelay != 0)
 	{
@@ -140,6 +141,7 @@ void SysTick_Handler(void)
 		HAL_GPIO_TogglePin(O_LED2_GPIO_Port,O_LED2_Pin);
 		TimingDelay = 100;
 	}
+#endif
 
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();

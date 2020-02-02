@@ -50,6 +50,19 @@ void MX_RTC_Init(void)
 
   /* USER CODE BEGIN Check_RTC_BKUP */
     
+  uint32_t dr0 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
+  if((dr0&0xffffff00) == 0x42affe00 )
+  {
+	  /*
+	   * when wakeup from standby, skip rtc reset and return
+	   */
+	  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 2050, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
+	  {
+	    Error_Handler();
+	  }
+	  return;
+  }
+
   /* USER CODE END Check_RTC_BKUP */
 
   /** Initialize RTC and set the Time and Date 
@@ -75,7 +88,7 @@ void MX_RTC_Init(void)
   }
   /** Enable the WakeUp 
   */
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 10246, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 2050, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
   {
     Error_Handler();
   }
