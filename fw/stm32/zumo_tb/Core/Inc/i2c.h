@@ -34,6 +34,8 @@ extern I2C_HandleTypeDef hi2c1;
 
 /* USER CODE BEGIN Private defines */
 
+#define I2C_BUFFER_SIZE 256
+
 #define I2C_REG_DS1307_REG0 				0x0000
 
 #define I2C_REG_TB_U32_LOOP_CNT				0x0040
@@ -54,6 +56,9 @@ extern I2C_HandleTypeDef hi2c1;
 #define I2C_REG_TB_U16_TEMP_C				0x0054
 
 #define I2C_REG_TB_U16_VL53L1X_RSTREG		0x0060
+
+#define I2C_REG_TB_U16_TERMINALBUFFER		1000
+#define I2C_TERMINAL_BUFFER_SIZE 1000
 
 /* USER CODE END Private defines */
 

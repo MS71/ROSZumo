@@ -16,6 +16,7 @@
 
 #include "5x5_font.h"
 
+#include "i2c.h"
 #include "ui.h"
 #include "pm.h"
 
@@ -36,6 +37,60 @@ static uint32_t ui_time()
 	return HAL_GetTick();
 }
 
+static void ui_update_terminal()
+{
+	if( API_I2C1_u8WRFlag(I2C_REG_TB_U16_TERMINALBUFFER) != 0 )
+	{
+		int x = 0;
+		int y = UI_H - CHAR_HEIGHT;
+		uint16_t addr = I2C_REG_TB_U16_TERMINALBUFFER+I2C_TERMINAL_BUFFER_SIZE-1;
+		uint16_t addr1 = 0;
+		uint16_t addr2 = 0;
+		uint8_t c;
+
+		do
+		{
+			while( (c=API_I2C1_u8Get(addr))<32 )
+			{
+				addr--;
+				if( addr<I2C_REG_TB_U16_TERMINALBUFFER )
+				{
+					return;
+				}
+			}
+
+			addr2 = addr;
+			while( ((c=API_I2C1_u8Get(addr))>=32) && (addr>I2C_REG_TB_U16_TERMINALBUFFER) )
+			{
+				addr--;
+			}
+			addr1 = addr+1;
+			char tmpstr[(UI_W/CHAR_WIDTH)+1] = {};
+			for(x=0;x<(UI_W/CHAR_WIDTH);x++)
+			{
+				if( x<(addr2-addr1) )
+				{
+					tmpstr[x] = API_I2C1_u8Get(addr1+x);
+				}
+				else
+				{
+					//tmpstr[x] = ' ';
+					break;
+				}
+				tmpstr[x+1] = 0;
+			}
+			ILI9341_Draw_Text(tmpstr, 0, y, UI_FG_COLOR_1, 1, UI_BG_COLOR);
+			if( x<(UI_W/CHAR_WIDTH) )
+			{
+				int w = (UI_W/CHAR_WIDTH) - x;
+				ILI9341_Draw_Rectangle(x*CHAR_WIDTH,y,w*CHAR_WIDTH,CHAR_HEIGHT,UI_BG_COLOR);
+			}
+
+			y -= CHAR_HEIGHT;
+		} while( y > (UI_H - 18*CHAR_HEIGHT) );
+	}
+}
+
 void ui_update(uint8_t bInit)
 {
 	static uint32_t t_ = 0;
@@ -47,6 +102,19 @@ void ui_update(uint8_t bInit)
 		return;
 	}
 	t_ = t + 500;
+
+#if 0
+		static int test = 0;
+		int i;
+		for(int i=0;i<test;i++)
+		{
+			API_I2C1_u8Set(I2C_REG_TB_U16_TERMINALBUFFER,'a' + (i%26));
+		}
+		API_I2C1_u8Set(I2C_REG_TB_U16_TERMINALBUFFER,10);
+		API_I2C1_u8Set(I2C_REG_TB_U16_TERMINALBUFFER,13);
+		test++;
+		if(test >= 100) test = 0;
+#endif
 
 	if( bInit )
 	{
@@ -143,6 +211,8 @@ void ui_update(uint8_t bInit)
 		sprintf(tmpstr,"Temp:%2d",u);
 		ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 	}
+
+	ui_update_terminal();
 }
 
 

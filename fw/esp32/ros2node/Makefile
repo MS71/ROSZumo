@@ -2,6 +2,6 @@ PROJECT_NAME := esp32-cam-demo
 
 include $(IDF_PATH)/make/project.mk
 
-flash_ota: app
+ota: app
 	curl 192.168.1.129:8032 --data-binary @- < build/$(PROJECT_NAME).bin
 

@@ -380,6 +380,7 @@ void pm_loop_internal()
 	}
 #endif
 
+#if 1
 	pm_run_adc();
 
 	{
@@ -387,12 +388,13 @@ void pm_loop_internal()
 		if( !UBAT_OK )
 		{
 			/*
-			 * auto shutdown
+			 * auto shutdown when ubat is to low
 			 */
 			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_ON);
 			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
 		}
 	}
+#endif
 
 #if 0
     /* Start ADC conversion */

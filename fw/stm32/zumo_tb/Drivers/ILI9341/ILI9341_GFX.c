@@ -222,39 +222,39 @@ void ILI9341_Draw_Filled_Rectangle_Coord(uint16_t X0, uint16_t Y0, uint16_t X1, 
 /*See fonts.h implementation of font on what is required for changing to a different font when switching fonts libraries*/
 void ILI9341_Draw_Char(char Character, uint16_t X, uint16_t Y, uint16_t Colour, uint16_t Size, uint16_t Background_Colour)
 {
-		uint8_t 	function_char;
-    uint16_t 	i,j;
-		
-		function_char = Character;
-		
-    if (function_char < ' ') {
-        Character = 0;
-    } else {
-        function_char -= 32;
-		}
-   	
-		char temp[CHAR_WIDTH];
-		for(uint8_t k = 0; k<CHAR_WIDTH; k++)
-		{
+	uint8_t 	function_char;
+	uint16_t 	i,j;
+
+	function_char = Character;
+
+	if (function_char < ' ') {
+		Character = 0;
+	} else {
+		function_char -= 32;
+	}
+
+	char temp[CHAR_WIDTH];
+	for(uint8_t k = 0; k<CHAR_WIDTH; k++)
+	{
 		temp[k] = font[function_char][k];
+	}
+
+	// Draw pixels
+	ILI9341_Draw_Rectangle(X, Y, CHAR_WIDTH*Size, CHAR_HEIGHT*Size, Background_Colour);
+	for (j=0; j<CHAR_WIDTH; j++) {
+		for (i=0; i<CHAR_HEIGHT; i++) {
+			if (temp[j] & (1<<i)) {
+				if(Size == 1)
+				{
+					ILI9341_Draw_Pixel(X+j, Y+i, Colour);
+				}
+				else
+				{
+					ILI9341_Draw_Rectangle(X+(j*Size), Y+(i*Size), Size, Size, Colour);
+				}
+			}
 		}
-		
-    // Draw pixels
-		ILI9341_Draw_Rectangle(X, Y, CHAR_WIDTH*Size, CHAR_HEIGHT*Size, Background_Colour);
-    for (j=0; j<CHAR_WIDTH; j++) {
-        for (i=0; i<CHAR_HEIGHT; i++) {
-            if (temp[j] & (1<<i)) {			
-							if(Size == 1)
-							{
-              ILI9341_Draw_Pixel(X+j, Y+i, Colour);
-							}
-							else
-							{
-							ILI9341_Draw_Rectangle(X+(j*Size), Y+(i*Size), Size, Size, Colour);
-							}
-            }						
-        }
-    }
+	}
 }
 
 /*Draws an array of characters (fonts imported from fonts.h) at X,Y location with specified font colour, size and Background colour*/
