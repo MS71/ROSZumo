@@ -50,6 +50,7 @@ My Current Setup:
   * I2C master
   * Camera
   * ROS2 Node
+  * OTA firmware update
   
 * external Linux PC or RPI3/4 as ROS2 master
 
