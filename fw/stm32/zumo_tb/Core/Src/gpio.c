@@ -39,7 +39,6 @@
      PB0   ------> USART3_RX
      PB2   ------> USART3_TX
      PB10   ------> I2C2_SCL
-     PD0   ------> S_TIM16_CH1
      PB8   ------> SPI2_SCK
      PB9   ------> SPI2_NSS
 */
@@ -174,14 +173,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = O_LIDAR_M_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF2_TIM16;
-  HAL_GPIO_Init(O_LIDAR_M_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB8 */
   GPIO_InitStruct.Pin = GPIO_PIN_8;

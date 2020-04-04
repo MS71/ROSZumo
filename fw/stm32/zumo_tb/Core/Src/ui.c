@@ -194,10 +194,12 @@ void ui_update(uint8_t bInit)
 		{
 			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, CYAN, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
+#ifdef UBAT_MIN
 		else if( u > UBAT_MIN )
 		{
 			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, YELLOW, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
+#endif
 		else
 		{
 			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, RED, UI_CHAR_SIZE, UI_BG_COLOR);

@@ -215,6 +215,7 @@ void pm_charge()
 		}
 		ubat_pref = u_bat;
 
+#if defined(UBAT_OK) && defined(UCHARGE_OK)
 		if( UBAT_OK && UCHARGE_OK )
 		{
 			int c=9; /* 4500ms */
@@ -229,6 +230,7 @@ void pm_charge()
 			HAL_GPIO_WritePin(O_CHARGE_ON_GPIO_Port,O_CHARGE_ON_Pin,GPIO_PIN_RESET);
 		}
 		else
+#endif
 		{
 			charging=0;
 		}
@@ -385,6 +387,7 @@ void pm_loop_internal()
 
 	{
 		uint16_t u_bat = API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_MV);
+#ifdef UBAT_OK
 		if( !UBAT_OK )
 		{
 			/*
@@ -393,6 +396,7 @@ void pm_loop_internal()
 			API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_ON);
 			API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
 		}
+#endif
 	}
 #endif
 

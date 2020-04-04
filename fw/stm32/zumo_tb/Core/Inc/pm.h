@@ -14,7 +14,9 @@
 #define UBAT_MAX (4*1400)
 #define U_CHARGE_MIN (UBAT_MAX+3000)
 #define U_CHARGE_MAX (20000)
+#if defined(UBAT_MIN) && defined(UBAT_MAX)
 #define UBAT_OK ( u_bat>=UBAT_MIN && u_bat<=UBAT_MAX )
+#endif
 #define UCHARGE_OK ( u_charge>=U_CHARGE_MIN && u_charge<=U_CHARGE_MAX )
 
 void pm_early_init();

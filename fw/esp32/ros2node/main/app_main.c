@@ -163,29 +163,28 @@ static void sd_test_task(void * param)
 #if 1
 static void i2c_test_task(void * param)
 {
-  uint8_t data = 0;
+  char tmpstr[] = "Hallo 123\n";
   while(1)
   {
-    //    		ESP_LOGI(TAG, "i2c_test_task ...");
+    ESP_LOGI(TAG, "i2c_test_task ...");
     i2c_cmd_handle_t CommandHandle = NULL;
     if ( ( CommandHandle = i2c_cmd_link_create( ) ) != NULL )
     {
       i2c_master_start( CommandHandle );
-      i2c_master_write_byte( CommandHandle, ( 20 << 1 ) | I2C_MASTER_WRITE, true);
-      i2c_master_write_byte( CommandHandle, data, true);
+      i2c_master_write_byte( CommandHandle, ( 32 << 0 ) | I2C_MASTER_WRITE, true);
+      i2c_master_write_byte( CommandHandle, 0x80, true);
+      i2c_master_write(CommandHandle, (uint8_t*)&tmpstr[0], strlen(tmpstr), true);
       i2c_master_stop( CommandHandle );
       if( ESP_OK  == i2c_master_cmd_begin((i2c_port_t)I2C_BUS_PORT, CommandHandle, pdMS_TO_TICKS( 10 )) )
       {
-        //		    		ESP_LOGI(TAG, "i2c_test_task ... ok");
+        ESP_LOGI(TAG, "i2c_test_task ... ok");
       }
       else
       {
-        //		    		ESP_LOGI(TAG, "i2c_test_task ... fail");
+        ESP_LOGI(TAG, "i2c_test_task ... fail");
       }
       i2c_cmd_link_delete( CommandHandle );
     }
-
-    data = ~data;
 
     vTaskDelay(200 / portTICK_PERIOD_MS);
   }

@@ -66,6 +66,20 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void setPWM(TIM_HandleTypeDef* timer, uint32_t channel, uint16_t period, uint16_t pulse)
+{
+	HAL_TIM_PWM_Stop(timer, channel);    // stop generation of pwm
+	TIM_OC_InitTypeDef sConfigOC;
+	timer->Init.Period = period;           // set the period duration
+	HAL_TIM_PWM_Init(timer);  // reinititialise with new period value
+	sConfigOC.OCMode = TIM_OCMODE_PWM1;
+	sConfigOC.Pulse = pulse;              // set the pulse duration
+	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+	HAL_TIM_PWM_ConfigChannel(timer, &sConfigOC, channel);
+	HAL_TIM_PWM_Start(timer, channel);   // start pwm generation}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -105,6 +119,7 @@ int main(void)
   MX_TIM1_Init();
   MX_RTC_Init();
   MX_ADC1_Init();
+  MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_RESET);
@@ -116,6 +131,10 @@ int main(void)
 
   pm_init();
 
+  //HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+  //setPWM(&htim16, TIM_CHANNEL_1, 10000, 7000);
+
+
   /* USER CODE END 2 */
  
  
@@ -124,6 +143,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
+		  //HAL_GPIO_TogglePin(O_LIDAR_M_GPIO_Port, O_LIDAR_M_Pin);
+
 #if 0
 	    HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_SET);
 		while(1)
