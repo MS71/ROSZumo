@@ -40,6 +40,7 @@ My Current Setup:
   * GPIO extender (e.g. for VL53L1X resets)
   * RPI LCD display driver
   * Battery changer
+  * RTC
   * low power managment
   
 * front VL53L1X as I2C slave
