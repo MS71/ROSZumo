@@ -1,23 +1,21 @@
-# ESP32ZUMO
-Small robot based on ESP32 + ROS + ZUMO 32u4 base
+# ROSZumo
+"second" Small robot based on ESP32 + ROS + ZUMO 32u4 base
 
-![alt text](doc/scanning_zumo.jpg)
 
 Components:
 * ZUMO32U4 Base (I2C Slave, Bat ADC, Motor Encoder, PWM for Lidar Stepper, l3gd20h, lsm303d, Line Sonsor, ...)
-* ESP32 with PSRAM
-* STM vl53l1x TOF sensor
-* Rotating Lidar with PCF8475+ULN2003 Stepper motor
+* ESP32CAM
+* 12x STM vl53l1x TOF sensor
+* optional rotating Lidar with PCF8475+ULN2003 Stepper motor
 * BNO055 Orientation Sensor
-* SSD1306 I2C Display
+* STM32G081 uC
+* optional orange PI Zero H5
+* RPI SPI Display
 
-Target Software:
-* ROS Serial ported to ESP32
+![alt text](images/zumoros_01.jpg)
 
-Host Software:
-* ROS Bringup Files
-* Mapping, Laser Scan, Navigation, ...
+![alt text](images/zumoros_02.jpg)
 
-Goals:
-* Small Autonomous Robot controlled by ROS from external PC
-* Small Autonomous Robot controlled by ROS running on ESP32
+![alt text](images/zumoros_03.jpg)
+
+![alt text](images/zumoros_04.jpg)
