@@ -7,7 +7,7 @@ Components:
 * ESP32CAM
 * ESP32 WRoverwith CAM and SDCard
 * driver and connector for rotating LIDAR
-* 12x STM vl53l1x TOF sensor
+* 12x STM VL53L1X TOF sensor
 * optional rotating Lidar with PCF8475+ULN2003 Stepper motor
 * BNO055 Orientation Sensor
 * STM32G081 uC
@@ -15,9 +15,11 @@ Components:
 * RPI SPI Display
 * NIMH charger with fron contacts
 * SPI flash
+* I2C level shifter
 * I2C bus connector
 * SPI bus connector
 * low power design (shutdown and wakeup)
+* optional Stereo/Quad SPI Camera
 
 ![alt text](images/zumoros_01.jpg)
 
@@ -26,3 +28,27 @@ Components:
 ![alt text](images/zumoros_03.jpg)
 
 ![alt text](images/zumoros_04.jpg)
+
+My Current Setup:
+* Zumo AVR 32U4 
+  * I2C slave
+  * motor driver
+  * bridge to all Zumo sensors (line sensor, beeper, IMU, ...)
+  
+* STM32G081
+  * I2C slave
+  * GPIO extender (e.g. for VL53L1X resets)
+  * RPI LCD display driver
+  * Battery changer
+  * low power managment
+  
+* front VL53L1X as I2C slave
+
+* ESP32Cam
+  * I2C master
+  * Camera
+  * ROS2 Node
+  
+* external Linux PC or RPI3/4 as ROS2 master
+
+  
