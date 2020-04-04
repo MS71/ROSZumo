@@ -11,9 +11,9 @@ Components:
 * optional rotating Lidar with PCF8475+ULN2003 Stepper motor
 * BNO055 Orientation Sensor
 * STM32G081 uC
-* optional orange PI Zero H5
-* RPI SPI Display
-* NIMH charger with fron contacts
+* connector for orange PI Zero H5
+* connector for RPI SPI Display
+* NIMH charger with front contacts
 * SPI flash
 * I2C level shifter
 * I2C bus connector
@@ -34,6 +34,7 @@ My Current Setup:
   * I2C slave
   * motor driver
   * bridge to all Zumo sensors (line sensor, beeper, IMU, ...)
+  * battery pack 4xAA
   
 * STM32G081
   * I2C slave
