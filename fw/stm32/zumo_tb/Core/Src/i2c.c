@@ -145,7 +145,7 @@ uint8_t i2c_buffer_wrflag[I2C_BUFFER_SIZE/8] = {};
 uint8_t receiveBuffer;
 uint8_t transmitBuffer;
 
-uint8_t i2c_terminal_buffer[I2C_TERMINAL_BUFFER_SIZE] = {0};
+char i2c_terminal_buffer[I2C_TERMINAL_BUFFER_SIZE] = {0};
 uint8_t i2c_terminal_buffer_wrflag = 0;
 
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t addrMatchCode) {
@@ -213,10 +213,9 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 	case getData:
 		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
 			//Error();
-		} else if( (registerAddress>>1) < I2C_BUFFER_SIZE ) {
-			i2c_buffer_wrflag[registerAddress>>3] |= (1<<(registerAddress&7));
-			API_I2C1_u8Set(registerAddress++,receiveBuffer);
-		} else {
+		}
+		else if(registerAddress == 0xff )
+		{
 			int i;
 			for( i=0; i<(I2C_TERMINAL_BUFFER_SIZE-1); i++ )
 			{
@@ -224,6 +223,10 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 			}
 			i2c_terminal_buffer[I2C_TERMINAL_BUFFER_SIZE-1] = receiveBuffer;
 			i2c_terminal_buffer_wrflag = 1;
+		}
+		else if( (registerAddress>>1) < I2C_BUFFER_SIZE ) {
+			i2c_buffer_wrflag[registerAddress>>3] |= (1<<(registerAddress&7));
+			API_I2C1_u8Set(registerAddress++,receiveBuffer);
 		}
 		break;
 	}

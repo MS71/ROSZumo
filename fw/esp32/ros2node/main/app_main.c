@@ -161,23 +161,86 @@ static void sd_test_task(void * param)
 
 #define I2C_BUS_PORT 0
 #if 1
-static void i2c_test_task(void * param)
+static void zumo_motor_set_speed(int16_t l, int16_t r)
 {
-  char tmpstr[] = "Hallo 123\n";
-  while(1)
-  {
-    ESP_LOGI(TAG, "i2c_test_task ...");
     i2c_cmd_handle_t CommandHandle = NULL;
     if ( ( CommandHandle = i2c_cmd_link_create( ) ) != NULL )
     {
       i2c_master_start( CommandHandle );
-      i2c_master_write_byte( CommandHandle, ( 32 << 0 ) | I2C_MASTER_WRITE, true);
-      i2c_master_write_byte( CommandHandle, 0x80, true);
+      i2c_master_write_byte( CommandHandle, ( 8 << 1 ) | I2C_MASTER_WRITE, true);
+      i2c_master_write_byte( CommandHandle, 3, true);
+      i2c_master_write_byte( CommandHandle, (l>>8)&0xff, true);
+      i2c_master_write_byte( CommandHandle, (l>>0)&0xff, true);
+      i2c_master_write_byte( CommandHandle, (r>>8)&0xff, true);
+      i2c_master_write_byte( CommandHandle, (r>>0)&0xff, true);
+      i2c_master_stop( CommandHandle );
+      i2c_master_cmd_begin((i2c_port_t)I2C_BUS_PORT, CommandHandle, pdMS_TO_TICKS( 10 ));
+      i2c_cmd_link_delete( CommandHandle );
+    }
+}
+
+
+static void zumo_led(uint8_t r, uint8_t y, uint8_t g)
+{
+    i2c_cmd_handle_t CommandHandle = NULL;
+    if ( ( CommandHandle = i2c_cmd_link_create( ) ) != NULL )
+    {
+      i2c_master_start( CommandHandle );
+      i2c_master_write_byte( CommandHandle, ( 8 << 1 ) | I2C_MASTER_WRITE, true);
+      i2c_master_write_byte( CommandHandle, 7, true);
+      i2c_master_write_byte( CommandHandle, ((r<<0)|(y<<1)|(g<<1))&0xff, true);      
+      i2c_master_stop( CommandHandle );
+      i2c_master_cmd_begin((i2c_port_t)I2C_BUS_PORT, CommandHandle, pdMS_TO_TICKS( 10 ));
+      i2c_cmd_link_delete( CommandHandle );
+    }
+}
+
+static void zumo_beep(uint16_t freq,uint16_t duration, uint8_t volume)
+{
+    i2c_cmd_handle_t CommandHandle = NULL;
+    if ( ( CommandHandle = i2c_cmd_link_create( ) ) != NULL )
+    {
+      i2c_master_start( CommandHandle );
+      i2c_master_write_byte( CommandHandle, ( 8 << 1 ) | I2C_MASTER_WRITE, true);
+      i2c_master_write_byte( CommandHandle, 1, true);
+      i2c_master_write_byte( CommandHandle, (freq>>8)&0xff, true);
+      i2c_master_write_byte( CommandHandle, (freq>>0)&0xff, true);
+      i2c_master_write_byte( CommandHandle, (duration>>8)&0xff, true);
+      i2c_master_write_byte( CommandHandle, (duration>>0)&0xff, true);
+      i2c_master_write_byte( CommandHandle, (volume>>0)&0xff, true);
+      i2c_master_stop( CommandHandle );
+      i2c_master_cmd_begin((i2c_port_t)I2C_BUS_PORT, CommandHandle, pdMS_TO_TICKS( 10 ));
+      i2c_cmd_link_delete( CommandHandle );
+    }
+}
+
+
+static void i2c_test_task(void * param)
+{
+  char tmpstr[64] = "";
+  int tmpcnt = 0;
+
+  zumo_led(0,0,0);
+  zumo_motor_set_speed(10,10);
+  zumo_beep(400,2000,15);
+//  zumo_led(0,0,0);
+
+  while(1)
+  {
+#if 0
+	  i2c_cmd_handle_t CommandHandle = NULL;
+    if ( ( CommandHandle = i2c_cmd_link_create( ) ) != NULL )
+    {
+      uint16_t reg = 1000;
+      sprintf(tmpstr,"Hallo 123 %d\n",tmpcnt++);
+      i2c_master_start( CommandHandle );
+      i2c_master_write_byte( CommandHandle, ( 0x10 << 1 ) | I2C_MASTER_WRITE, true);
+      i2c_master_write_byte( CommandHandle, 0xff, true);
       i2c_master_write(CommandHandle, (uint8_t*)&tmpstr[0], strlen(tmpstr), true);
       i2c_master_stop( CommandHandle );
       if( ESP_OK  == i2c_master_cmd_begin((i2c_port_t)I2C_BUS_PORT, CommandHandle, pdMS_TO_TICKS( 10 )) )
       {
-        ESP_LOGI(TAG, "i2c_test_task ... ok");
+        //ESP_LOGI(TAG, "i2c_test_task ... ok");
       }
       else
       {
@@ -185,12 +248,42 @@ static void i2c_test_task(void * param)
       }
       i2c_cmd_link_delete( CommandHandle );
     }
-
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+#endif
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
   vTaskDelete(NULL);
 }
 #endif
+
+int my_i2clog(const char *format, va_list args)
+{
+	static char line[256];
+	vsnprintf (line, sizeof(line), format, args);
+	int n = strlen(line);
+	if(n > 0 )
+	{
+		i2c_cmd_handle_t CommandHandle = NULL;
+		if ( ( CommandHandle = i2c_cmd_link_create( ) ) != NULL )
+		{
+			i2c_master_start( CommandHandle );
+			i2c_master_write_byte( CommandHandle, ( 0x10 << 1 ) | I2C_MASTER_WRITE, true);
+			i2c_master_write_byte( CommandHandle, 0xff, true);
+			i2c_master_write(CommandHandle, (uint8_t*)&line[0], n, true);
+			i2c_master_stop( CommandHandle );
+			if( ESP_OK  == i2c_master_cmd_begin((i2c_port_t)I2C_BUS_PORT, CommandHandle, pdMS_TO_TICKS( 10 )) )
+			{
+				//ESP_LOGI(TAG, "i2c_test_task ... ok");
+			}
+			else
+			{
+				ESP_LOGI(TAG, "i2c_test_task ... fail");
+			}
+			i2c_cmd_link_delete( CommandHandle );
+			return n;
+		}
+	}
+	return 0;
+}
 
 void app_main()
 {
@@ -305,6 +398,9 @@ void app_main()
   xTaskCreate(&i2c_test_task, "i2c_test_task", 4096, NULL, 5, NULL);
   #endif
 
+  esp_log_set_vprintf(my_i2clog);
+
+#if 0
   camera_config_t camera_config = {
     .ledc_channel = LEDC_CHANNEL_0,
     .ledc_timer = LEDC_TIMER_0,
@@ -382,6 +478,7 @@ void app_main()
       ESP_LOGI(TAG, "Open http://" IPSTR "/jpg_stream for multipart/x-mixed-replace stream of JPEGs", IP2STR(&s_ip_addr));
     }
   }
+#endif
 
   #endif
 
@@ -608,6 +705,7 @@ static void initialise_wifi(void)
   ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
   ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
   ESP_ERROR_CHECK( esp_wifi_start() );
+  tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA ,"zumoros");
   ESP_ERROR_CHECK( esp_wifi_set_ps(WIFI_PS_NONE) );
   ESP_LOGI(TAG, "Connecting to \"%s\"", wifi_config.sta.ssid);
   xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);

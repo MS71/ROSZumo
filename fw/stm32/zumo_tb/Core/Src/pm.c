@@ -290,6 +290,7 @@ void pm_early_init()
 		if( (API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE)==PWRMODE_OFF) ||
 				(API_I2C1_u8Get(I2C_REG_TB_U8_PWRMODE)==PWRMODE_AUTO) )
 		{
+#if 0 // disable pm
 			if( HAL_GPIO_ReadPin(KEY2_GPIO_Port,KEY2_Pin) != GPIO_PIN_RESET )
 			{
 				pm_charge();
@@ -297,6 +298,7 @@ void pm_early_init()
 				/* sleep again if not pressed */
 				vStandby();
 			}
+#endif
 		}
 	}
 	else

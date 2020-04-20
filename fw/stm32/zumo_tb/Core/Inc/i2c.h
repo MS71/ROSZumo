@@ -58,7 +58,7 @@ extern I2C_HandleTypeDef hi2c1;
 #define I2C_REG_TB_U16_VL53L1X_RSTREG		0x0060
 
 #define I2C_REG_TB_U16_TERMINALBUFFER		1000
-#define I2C_TERMINAL_BUFFER_SIZE 1000
+#define I2C_TERMINAL_BUFFER_SIZE 		    1000
 
 /* USER CODE END Private defines */
 

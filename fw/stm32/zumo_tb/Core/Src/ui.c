@@ -68,7 +68,7 @@ static void ui_update_terminal()
 			char tmpstr[(UI_W/CHAR_WIDTH)+1] = {};
 			for(x=0;x<(UI_W/CHAR_WIDTH);x++)
 			{
-				if( x<(addr2-addr1) )
+				if( x<=(addr2-addr1) )
 				{
 					tmpstr[x] = API_I2C1_u8Get(addr1+x);
 				}
