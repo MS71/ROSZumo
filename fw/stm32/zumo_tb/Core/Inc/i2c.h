@@ -50,6 +50,9 @@ extern I2C_HandleTypeDef hi2c1;
 #define I2C_REG_TB_U8_PWRMODE_NEXT			0x0046
 #define I2C_REG_TB_U8_PWR_TMPON  			0x0047
 #define PWR_TMPON_TIME	  10
+#define I2C_REG_TB_U8_RFU48 				0x0048
+#define I2C_REG_TB_U8_WIFIFST				0x0049
+#define I2C_REG_TB_U32_IPADDR				0x004a
 
 #define I2C_REG_TB_U16_UBAT_MV				0x0050
 #define I2C_REG_TB_U16_UCHARGE_MV			0x0052

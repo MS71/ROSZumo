@@ -86,7 +86,7 @@ static void ui_update_terminal()
 				ILI9341_Draw_Rectangle(x*CHAR_WIDTH,y,w*CHAR_WIDTH,CHAR_HEIGHT,UI_BG_COLOR);
 			}
 
-			y -= CHAR_HEIGHT;
+			y -= (CHAR_HEIGHT+1);
 		} while( y > (UI_H - 18*CHAR_HEIGHT) );
 	}
 }
@@ -188,22 +188,40 @@ void ui_update(uint8_t bInit)
 		sprintf(tmpstr,"UBAT:%4d",(int)u);
 		if( u > UBAT_FULL )
 		{
-			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, GREEN, UI_CHAR_SIZE, UI_BG_COLOR);
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r)*UI_CHAR_HEIGHT, GREEN, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
 		else if( u > UBAT_MID )
 		{
-			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, CYAN, UI_CHAR_SIZE, UI_BG_COLOR);
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r)*UI_CHAR_HEIGHT, CYAN, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
 #ifdef UBAT_MIN
 		else if( u > UBAT_MIN )
 		{
-			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, YELLOW, UI_CHAR_SIZE, UI_BG_COLOR);
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r)*UI_CHAR_HEIGHT, YELLOW, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
 #endif
 		else
 		{
-			ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, RED, UI_CHAR_SIZE, UI_BG_COLOR);
+			ILI9341_Draw_Text(tmpstr, 0, 1+(r)*UI_CHAR_HEIGHT, RED, UI_CHAR_SIZE, UI_BG_COLOR);
 		}
+
+		{
+			uint32_t u32_tmp = API_I2C1_u32Get(I2C_REG_TB_U32_IPADDR);
+			if( u32_tmp != 0 )
+			{
+				sprintf(tmpstr,"%03d.%03d.%03d.%03d",
+						(u32_tmp>>24)&0xff,
+						(u32_tmp>>16)&0xff,
+						(u32_tmp>>8)&0xff,
+						(u32_tmp>>0)&0xff);
+			}
+			else
+			{
+				sprintf(tmpstr,"               ");
+			}
+			ILI9341_Draw_Text(tmpstr, UI_W-15*UI_CHAR_WIDTH, 1+(r)*UI_CHAR_HEIGHT , UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
+		}
+		r++;
 
 		u = API_I2C1_u16Get(I2C_REG_TB_U16_UCHARGE_MV);
 		sprintf(tmpstr,"UCH:%4d",u);

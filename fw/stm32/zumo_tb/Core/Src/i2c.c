@@ -276,13 +276,15 @@ uint8_t API_I2C1_u8Get(uint16_t addr)
 uint16_t API_I2C1_u16Get(uint16_t addr)
 {
 	if( (I2C_BUFFER_SIZE) < addr ) return 0;
-	return i2c_buffer.u16[addr>>1];
+	//return i2c_buffer.u16[addr>>1];
+	return (i2c_buffer.u8[addr+2]<<8)|(i2c_buffer.u8[addr+3]<<0);
 }
 
 uint32_t API_I2C1_u32Get(uint16_t addr)
 {
 	if( (I2C_BUFFER_SIZE) < addr ) return 0;
-	return i2c_buffer.u32[addr>>2];
+	//return i2c_buffer.u32[addr>>2];
+	return (i2c_buffer.u8[addr]<<24)|(i2c_buffer.u8[addr+1]<<16)|(i2c_buffer.u8[addr+2]<<8)|(i2c_buffer.u8[addr+3]<<0);
 }
 
 void API_I2C1_u8Set(uint16_t addr, uint8_t data)
@@ -307,14 +309,20 @@ void API_I2C1_u16Set(uint16_t addr, uint16_t data)
 {
 	if( (I2C_BUFFER_SIZE) < addr ) return;
 	i2c_buffer_wrflag[addr>>3] |= (1<<(addr&7));
-	i2c_buffer.u16[addr>>1] = data;
+	//i2c_buffer.u16[addr>>1] = data;
+	i2c_buffer.u8[addr+0] = (data>>8)&0xff;
+	i2c_buffer.u8[addr+1] = (data>>0)&0xff;
 }
 
 void API_I2C1_u32Set(uint16_t addr, uint32_t data)
 {
 	if( (I2C_BUFFER_SIZE) < addr ) return;
 	i2c_buffer_wrflag[addr>>3] |= (1<<(addr&7));
-	i2c_buffer.u32[addr>>2] = data;
+	//i2c_buffer.u32[addr>>2] = data;
+	i2c_buffer.u8[addr+0] = (data>>24)&0xff;
+	i2c_buffer.u8[addr+1] = (data>>16)&0xff;
+	i2c_buffer.u8[addr+2] = (data>>8)&0xff;
+	i2c_buffer.u8[addr+3] = (data>>0)&0xff;
 }
 
 void API_I2C1_Init(void)
