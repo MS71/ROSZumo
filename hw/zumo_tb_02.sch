@@ -33924,6 +33924,10 @@ Source: 008-0260-0_E.pdf</description>
 <part name="PAD19" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,9" device="" package3d_urn="urn:adsk.eagle:package:30840/1"/>
 <part name="PAD20" library="wirepad" library_urn="urn:adsk.eagle:library:412" deviceset="1,6/0,9" device="" package3d_urn="urn:adsk.eagle:package:30840/1"/>
 <part name="Q5" library="transistor-power" library_urn="urn:adsk.eagle:library:400" deviceset="IRLML5203" device="" package3d_urn="urn:adsk.eagle:package:29512/2"/>
+<part name="H3" library="holes" library_urn="urn:adsk.eagle:library:237" deviceset="MOUNT-HOLE" device="2.8" package3d_urn="urn:adsk.eagle:package:14271/1"/>
+<part name="H4" library="holes" library_urn="urn:adsk.eagle:library:237" deviceset="MOUNT-HOLE" device="2.8" package3d_urn="urn:adsk.eagle:package:14271/1"/>
+<part name="H5" library="holes" library_urn="urn:adsk.eagle:library:237" deviceset="MOUNT-HOLE" device="2.8" package3d_urn="urn:adsk.eagle:package:14271/1"/>
+<part name="H6" library="holes" library_urn="urn:adsk.eagle:library:237" deviceset="MOUNT-HOLE" device="2.8" package3d_urn="urn:adsk.eagle:package:14271/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -34435,6 +34439,22 @@ Source: 008-0260-0_E.pdf</description>
 <instance part="Q5" gate="G$1" x="30.48" y="22.86" smashed="yes" rot="R90">
 <attribute name="NAME" x="27.94" y="30.48" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="30.48" y="30.48" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="H3" gate="G$1" x="96.52" y="144.78" smashed="yes">
+<attribute name="NAME" x="98.552" y="145.3642" size="1.778" layer="95"/>
+<attribute name="VALUE" x="98.552" y="142.3162" size="1.778" layer="96"/>
+</instance>
+<instance part="H4" gate="G$1" x="96.52" y="137.16" smashed="yes">
+<attribute name="NAME" x="98.552" y="137.7442" size="1.778" layer="95"/>
+<attribute name="VALUE" x="98.552" y="134.6962" size="1.778" layer="96"/>
+</instance>
+<instance part="H5" gate="G$1" x="96.52" y="152.4" smashed="yes">
+<attribute name="NAME" x="98.552" y="152.9842" size="1.778" layer="95"/>
+<attribute name="VALUE" x="98.552" y="149.9362" size="1.778" layer="96"/>
+</instance>
+<instance part="H6" gate="G$1" x="96.52" y="129.54" smashed="yes">
+<attribute name="NAME" x="98.552" y="130.1242" size="1.778" layer="95"/>
+<attribute name="VALUE" x="98.552" y="127.0762" size="1.778" layer="96"/>
 </instance>
 </instances>
 <busses>
@@ -35099,7 +35119,6 @@ Source: 008-0260-0_E.pdf</description>
 <pinref part="IC3" gate="G$1" pin="IN"/>
 <pinref part="Q5" gate="G$1" pin="D"/>
 <junction x="35.56" y="25.4"/>
-<pinref part="Q5" gate="G$1" pin="D"/>
 </segment>
 </net>
 <net name="N$15" class="0">
@@ -36535,7 +36554,6 @@ Source: 008-0260-0_E.pdf</description>
 <segment>
 <pinref part="PAD11" gate="1" pin="P"/>
 <pinref part="GND41" gate="1" pin="GND"/>
-<pinref part="PAD17" gate="1" pin="P"/>
 <pinref part="PAD17" gate="1" pin="P"/>
 <wire x1="104.14" y1="248.92" x2="111.76" y2="248.92" width="0.1524" layer="91"/>
 <wire x1="111.76" y1="248.92" x2="111.76" y2="246.38" width="0.1524" layer="91"/>
