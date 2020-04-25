@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.7.0">
+<eagle version="9.5.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
+<setting keepoldvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
 <grid distance="25" unitdist="mil" unit="mil" style="dots" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mil"/>
@@ -1629,10 +1630,14 @@ for trimmer refence see : &lt;u&gt;www.electrospec-inc.com/cross_references/trim
 <param name="slThermalsForVias" value="0"/>
 <param name="dpMaxLengthDifference" value="10mm"/>
 <param name="dpGapFactor" value="2.5"/>
-<param name="checkGrid" value="0"/>
 <param name="checkAngle" value="0"/>
 <param name="checkFont" value="1"/>
 <param name="checkRestrict" value="0"/>
+<param name="checkStop" value="0"/>
+<param name="checkValues" value="0"/>
+<param name="checkNames" value="1"/>
+<param name="checkWireStubs" value="1"/>
+<param name="checkPolygonWidth" value="0"/>
 <param name="useDiameter" value="13"/>
 <param name="maxErrors" value="50"/>
 </designrules>
@@ -1733,17 +1738,50 @@ for trimmer refence see : &lt;u&gt;www.electrospec-inc.com/cross_references/trim
 </pass>
 </autorouter>
 <elements>
-<element name="C15" library="rcl" package="C0805" value="0.1" x="5.715" y="3.175" rot="MR180"/>
-<element name="IC8" library="stm32" package="LQFP-32" value="STM32G071KBT6N" x="3.048" y="6.985" rot="R90"/>
-<element name="JP1" library="pinhead-1" package="2X11SMD" value="" x="2.54" y="21.59"/>
-<element name="JP2" library="pinhead-1" package="2X11SMD" value="" x="25.4" y="21.59" rot="MR0"/>
-<element name="PAD1" library="wirepad" package="SMD1,27-2,54" value="" x="1.27" y="0.635"/>
-<element name="PAD2" library="wirepad" package="SMD1,27-2,54" value="" x="1.27" y="0.635" rot="MR0"/>
-<element name="PAD3" library="wirepad" package="SMD1,27-2,54" value="" x="3.81" y="0.635"/>
-<element name="PAD4" library="wirepad" package="SMD1,27-2,54" value="" x="3.81" y="0.635" rot="MR0"/>
-<element name="PAD5" library="wirepad" package="SMD1,27-2,54" value="" x="6.35" y="0.635"/>
-<element name="PAD6" library="wirepad" package="SMD1,27-2,54" value="" x="6.35" y="0.635" rot="MR0"/>
-<element name="R23" library="rcl" package="R0805" value="100K" x="5.715" y="3.175" rot="R180"/>
+<element name="C15" library="rcl" package="C0805" value="0.1" x="5.715" y="3.175" smashed="yes" rot="MR180">
+<attribute name="NAME" x="4.445" y="1.905" size="1.27" layer="26" rot="MR180"/>
+<attribute name="VALUE" x="4.445" y="5.715" size="1.27" layer="28" rot="MR180"/>
+</element>
+<element name="IC8" library="stm32" package="LQFP-32" value="STM32G071KBT6N" x="3.048" y="6.985" smashed="yes" rot="R90">
+<attribute name="NAME" x="0.19" y="6.921" size="1.778" layer="25" rot="R90"/>
+<attribute name="VALUE" x="8.8181" y="6.921" size="1.778" layer="27" rot="R90"/>
+</element>
+<element name="JP1" library="pinhead-1" package="2X11SMD" value="" x="2.54" y="21.59" smashed="yes">
+<attribute name="NAME" x="-0.0762" y="23.4188" size="1.27" layer="25" ratio="10"/>
+<attribute name="VALUE" x="0" y="15.875" size="1.27" layer="27"/>
+</element>
+<element name="JP2" library="pinhead-1" package="2X11SMD" value="" x="25.4" y="21.59" smashed="yes" rot="MR0">
+<attribute name="NAME" x="28.0162" y="23.4188" size="1.27" layer="26" ratio="10" rot="MR0"/>
+<attribute name="VALUE" x="27.94" y="15.875" size="1.27" layer="28" rot="MR0"/>
+</element>
+<element name="PAD1" library="wirepad" package="SMD1,27-2,54" value="" x="1.27" y="0.635" smashed="yes">
+<attribute name="NAME" x="0.47" y="-1.765" size="1.27" layer="25" rot="R90"/>
+<attribute name="VALUE" x="1.27" y="0.635" size="0.0254" layer="27"/>
+</element>
+<element name="PAD2" library="wirepad" package="SMD1,27-2,54" value="" x="1.27" y="0.635" smashed="yes" rot="MR0">
+<attribute name="NAME" x="2.07" y="-1.765" size="1.27" layer="26" rot="MR90"/>
+<attribute name="VALUE" x="1.27" y="0.635" size="0.0254" layer="28" rot="MR0"/>
+</element>
+<element name="PAD3" library="wirepad" package="SMD1,27-2,54" value="" x="3.81" y="0.635" smashed="yes">
+<attribute name="NAME" x="3.01" y="-1.765" size="1.27" layer="25" rot="R90"/>
+<attribute name="VALUE" x="3.81" y="0.635" size="0.0254" layer="27"/>
+</element>
+<element name="PAD4" library="wirepad" package="SMD1,27-2,54" value="" x="3.81" y="0.635" smashed="yes" rot="MR0">
+<attribute name="NAME" x="4.61" y="-1.765" size="1.27" layer="26" rot="MR90"/>
+<attribute name="VALUE" x="3.81" y="0.635" size="0.0254" layer="28" rot="MR0"/>
+</element>
+<element name="PAD5" library="wirepad" package="SMD1,27-2,54" value="" x="6.35" y="0.635" smashed="yes">
+<attribute name="NAME" x="5.55" y="-1.765" size="1.27" layer="25" rot="R90"/>
+<attribute name="VALUE" x="6.35" y="0.635" size="0.0254" layer="27"/>
+</element>
+<element name="PAD6" library="wirepad" package="SMD1,27-2,54" value="" x="6.35" y="0.635" smashed="yes" rot="MR0">
+<attribute name="NAME" x="7.15" y="-1.765" size="1.27" layer="26" rot="MR90"/>
+<attribute name="VALUE" x="6.35" y="0.635" size="0.0254" layer="28" rot="MR0"/>
+</element>
+<element name="R23" library="rcl" package="R0805" value="100K" x="5.715" y="3.175" smashed="yes" rot="R180">
+<attribute name="NAME" x="6.35" y="1.905" size="1.27" layer="25" rot="R180"/>
+<attribute name="VALUE" x="6.35" y="5.715" size="1.27" layer="27" rot="R180"/>
+</element>
 </elements>
 <signals>
 <signal name="U3.3" class="2">
@@ -2341,6 +2379,13 @@ for trimmer refence see : &lt;u&gt;www.electrospec-inc.com/cross_references/trim
 <contactref element="IC8" pad="32"/>
 </signal>
 </signals>
+<mfgpreviewcolors>
+<mfgpreviewcolor name="soldermaskcolor" color="0xC8008000"/>
+<mfgpreviewcolor name="silkscreencolor" color="0xFFFEFEFE"/>
+<mfgpreviewcolor name="backgroundcolor" color="0xFF282828"/>
+<mfgpreviewcolor name="coppercolor" color="0xFFFFBF00"/>
+<mfgpreviewcolor name="substratecolor" color="0xFF786E46"/>
+</mfgpreviewcolors>
 </board>
 </drawing>
 </eagle>
