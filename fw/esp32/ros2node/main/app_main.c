@@ -24,6 +24,9 @@
 #include "freertos/event_groups.h"
 #include "ota_server.h"
 
+#include "Arduino.h"
+#include "ros2arduino.h"
+
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
@@ -316,6 +319,8 @@ void app_main()
 		ESP_ERROR_CHECK( nvs_flash_erase() );
 		ESP_ERROR_CHECK( nvs_flash_init() );
 	}
+
+	initArduino();
 
 	initialise_wifi();
 	xTaskCreate(&ota_server_task, "ota_server_task", 4096, NULL, 5, NULL);
