@@ -30,7 +30,12 @@
 
 /* USER CODE END 1 */
 
-/** Configure pins
+/** Configure pins as
+        * Analog
+        * Input
+        * Output
+        * EVENT_OUT
+        * EXTI
      PC2   ------> SPI2_MISO
      PC3   ------> SPI2_MOSI
      PA3   ------> USART2_RX
@@ -54,38 +59,37 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, DC_Pin|O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin 
+  HAL_GPIO_WritePin(GPIOC, DC_Pin|O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin
                           |O_L_RST_8_Pin|RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, O_LED2_Pin|O_L_RST_10_Pin|CS_Pin|O_CHARGE_ON_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, O_L_RST_1_Pin|O_L_RST_10B12_Pin|O_L_RST_11_Pin|ZUMO_SHDN_Pin 
-                          |O_L_RST_3_Pin|O_L_RST_4_Pin|O_L_RST_5_Pin|O_L_RST_6_Pin 
-                          |O_L_RST_7_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, O_L_RST_1_Pin|O_L_RST_10B12_Pin|O_L_RST_11_Pin|O_L_RST_3_Pin
+                          |O_L_RST_4_Pin|O_L_RST_5_Pin|O_L_RST_6_Pin|O_L_RST_7_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, O_LEDSTRB_Pin|O_FLASH_CS_Pin|O_BUS_RESET_Pin|O_BNO055_RESET_Pin 
+  HAL_GPIO_WritePin(GPIOD, O_LEDSTRB_Pin|O_FLASH_CS_Pin|O_BUS_RESET_Pin|O_BNO055_RESET_Pin
                           |O_L_RST_0_Pin|O_L_RST_2_Pin|O_FLASH_HOLD_Pin|O_FLASH_WP_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PCPin PCPin PCPin */
-  GPIO_InitStruct.Pin = I_RPI_14_Pin|I_INT_Pin|I_RPI_11_Pin;
+  /*Configure GPIO pins : PCPin PCPin PCPin PCPin */
+  GPIO_InitStruct.Pin = I_RPI_14_Pin|KEY1_Pin|I_INT_Pin|I_RPI_11_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PCPin PCPin PCPin PCPin 
+  /*Configure GPIO pins : PCPin PCPin PCPin PCPin
                            PCPin PCPin */
-  GPIO_InitStruct.Pin = DC_Pin|O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin 
+  GPIO_InitStruct.Pin = DC_Pin|O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin
                           |O_L_RST_8_Pin|RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PCPin PCPin PCPin */
-  GPIO_InitStruct.Pin = KEY1_Pin|KEY2_Pin|KEY0_Pin;
+  /*Configure GPIO pins : PCPin PCPin */
+  GPIO_InitStruct.Pin = KEY2_Pin|KEY0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -135,9 +139,9 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF4_USART3;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin PBPin 
+  /*Configure GPIO pins : PBPin PBPin PBPin PBPin
                            PBPin PBPin PBPin PBPin */
-  GPIO_InitStruct.Pin = O_L_RST_1_Pin|O_L_RST_10B12_Pin|O_L_RST_11_Pin|O_L_RST_3_Pin 
+  GPIO_InitStruct.Pin = O_L_RST_1_Pin|O_L_RST_10B12_Pin|O_L_RST_11_Pin|O_L_RST_3_Pin
                           |O_L_RST_4_Pin|O_L_RST_5_Pin|O_L_RST_6_Pin|O_L_RST_7_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -160,14 +164,13 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = ZUMO_SHDN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(ZUMO_SHDN_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PDPin PDPin PDPin PDPin 
+  /*Configure GPIO pins : PDPin PDPin PDPin PDPin
                            PDPin PDPin PDPin PDPin */
-  GPIO_InitStruct.Pin = O_LEDSTRB_Pin|O_FLASH_CS_Pin|O_BUS_RESET_Pin|O_BNO055_RESET_Pin 
+  GPIO_InitStruct.Pin = O_LEDSTRB_Pin|O_FLASH_CS_Pin|O_BUS_RESET_Pin|O_BNO055_RESET_Pin
                           |O_L_RST_0_Pin|O_L_RST_2_Pin|O_FLASH_HOLD_Pin|O_FLASH_WP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;

@@ -17,12 +17,13 @@
  ******************************************************************************
  */
 /* USER CODE END Header */
-
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
 #include "i2c.h"
+#include "iwdg.h"
+#include "lptim.h"
 #include "rtc.h"
 #include "spi.h"
 #include "tim.h"
@@ -31,8 +32,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include "config.h"
 #include "stm32g0xx_hal_pwr_ex.h"
+#ifdef ENABLE_LCD_UI
 #include "ui.h"
+#endif
 #include "pm.h"
 
 /* USER CODE END Includes */
@@ -60,6 +64,8 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+
+extern void initialise_monitor_handles(void);
 
 /* USER CODE END PFP */
 
@@ -89,9 +95,10 @@ void setPWM(TIM_HandleTypeDef* timer, uint32_t channel, uint16_t period, uint16_
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+#ifdef ENABLE_SEMI_PRINTF
+  initialise_monitor_handles();
+#endif
   /* USER CODE END 1 */
-  
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -99,8 +106,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
-  pm_early_init();
 
   /* USER CODE END Init */
 
@@ -120,32 +125,93 @@ int main(void)
   MX_RTC_Init();
   MX_ADC1_Init();
   MX_TIM16_Init();
+  MX_LPTIM1_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_RESET);
+  __HAL_RCC_PWR_CLK_ENABLE();
 
+#if 0
+  /* Disable Prefetch Buffer */
+  __HAL_FLASH_PREFETCH_BUFFER_DISABLE();
+
+  RCC->IOPSMENR  = 0x00u;
+  RCC->AHBSMENR  = 0x00u;
+
+  RCC->APBSMENR1 = 0x00u;
+  RCC->APBSMENR2 = 0x00u;
+#endif
+
+  pm_early_init();
+
+#ifdef HAL_IWDG_MODULE_ENABLED
+	HAL_IWDG_Refresh(&hiwdg);
+#endif
+
+#if 0
+  /* Enable Power Clock */
+  __HAL_RCC_PWR_CLK_ENABLE();
+
+  /* Reduce the System clock */
+  SystemClock_Decrease();
+
+  /* Set regulator voltage to scale 2 */
+  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE2);
+
+  /* Enter LP RUN Mode */
+  HAL_PWREx_EnableLowPowerRunMode();
+#endif
+
+  //printf("main() ...\n");
+
+#ifdef ENABLE_LCD_UI
   ui_init();
+#endif
 
   API_I2C1_Init();
+
+  pm_init();
+
   API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0x0000);
 
   API_I2C1_u8Set(I2C_REG_TB_U8_WIFIFST,0x00);
   API_I2C1_u32Set(I2C_REG_TB_U32_IPADDR,0x00000000);
 
-  pm_init();
-
   //HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
   //setPWM(&htim16, TIM_CHANNEL_1, 10000, 7000);
 
 
+#if 0
+	HAL_Delay(500);
+
+    /* Disable low power run mode and reset the clock to initialization configuration */
+    HAL_PWREx_DisableLowPowerRunMode();
+
+    /* Configure the system clock for the RUN mode */
+    SystemClock_Config();
+#endif
+
   /* USER CODE END 2 */
- 
- 
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	//printf("main() ...\n");
 	while (1)
 	{
+#ifdef ENABLE_SEMI_PRINTF
+#if 0
+		printf("main() u_bat=%d u_charge=%d temp=%d charge=%d off=%d\n",
+				API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_MV),
+				API_I2C1_u16Get(I2C_REG_TB_U16_UCHARGE_MV),
+				API_I2C1_u16Get(I2C_REG_TB_U16_TEMP_C),
+				HAL_GPIO_ReadPin(O_CHARGE_ON_GPIO_Port,O_CHARGE_ON_Pin),
+				HAL_GPIO_ReadPin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin));
+#endif
+#endif // ENABLE_SEMI_PRINTF
+
+		//HAL_WWDG_Refresh(WWDG);
+		//HAL_IWDG_Refresh(IWDG);
+
 		  //HAL_GPIO_TogglePin(O_LIDAR_M_GPIO_Port, O_LIDAR_M_Pin);
 
 #if 0
@@ -206,7 +272,9 @@ int main(void)
 			HAL_GPIO_WritePin(O_BNO055_RESET_GPIO_Port,O_BNO055_RESET_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
 		}
 
+#ifdef ENABLE_LCD_UI
 		ui_loop();
+#endif
 		pm_loop();
     /* USER CODE END WHILE */
 
@@ -225,10 +293,11 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
-  /** Configure the main internal regulator output voltage 
+  /** Configure the main internal regulator output voltage
   */
   HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
   */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
@@ -246,25 +315,27 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB busses clocks 
+  /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV8;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
-  /** Initializes the peripherals clocks 
+  /** Initializes the peripherals clocks
   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_TIM1;
-  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
-  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_SYSCLK;
-  PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLKSOURCE_PCLK1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_ADC
+                              |RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
+  PeriphClkInit.Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI;
+  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_HSI;
+  PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLKSOURCE_PLL;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
 
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -285,7 +356,17 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
-
+	while(1)
+	{
+#ifdef O_LED2_Pin
+		HAL_GPIO_WritePin(O_LED2_GPIO_Port,O_LED2_Pin,GPIO_PIN_SET);
+#endif
+		HAL_Delay(100);
+#ifdef O_LED2_Pin
+		HAL_GPIO_WritePin(O_LED2_GPIO_Port,O_LED2_Pin,GPIO_PIN_RESET);
+#endif
+		HAL_Delay(100);
+	}
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -298,7 +379,7 @@ void Error_Handler(void)
   * @retval None
   */
 void assert_failed(uint8_t *file, uint32_t line)
-{ 
+{
   /* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
      tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */

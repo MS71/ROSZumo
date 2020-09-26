@@ -32,12 +32,12 @@ void MX_RTC_Init(void)
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
 
-  /** Initialize RTC Only 
+  /** Initialize RTC Only
   */
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
+  hrtc.Init.SynchPrediv = 249;
   hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
   hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
   hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
@@ -49,23 +49,10 @@ void MX_RTC_Init(void)
   }
 
   /* USER CODE BEGIN Check_RTC_BKUP */
-    
-  uint32_t dr0 = HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0);
-  if((dr0&0xffffff00) == 0x42affe00 )
-  {
-	  /*
-	   * when wakeup from standby, skip rtc reset and return
-	   */
-	  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 2050, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
-	  {
-	    Error_Handler();
-	  }
-	  return;
-  }
 
   /* USER CODE END Check_RTC_BKUP */
 
-  /** Initialize RTC and set the Time and Date 
+  /** Initialize RTC and set the Time and Date
   */
   sTime.Hours = 0x0;
   sTime.Minutes = 0x0;
@@ -86,12 +73,6 @@ void MX_RTC_Init(void)
   {
     Error_Handler();
   }
-  /** Enable the WakeUp 
-  */
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 2050, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
-  {
-    Error_Handler();
-  }
 
 }
 
@@ -106,10 +87,6 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
     /* RTC clock enable */
     __HAL_RCC_RTC_ENABLE();
     __HAL_RCC_RTCAPB_CLK_ENABLE();
-
-    /* RTC interrupt Init */
-    HAL_NVIC_SetPriority(RTC_TAMP_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(RTC_TAMP_IRQn);
   /* USER CODE BEGIN RTC_MspInit 1 */
    __HAL_RCC_RTCAPB_CLK_ENABLE();
   /* USER CODE END RTC_MspInit 1 */
@@ -127,14 +104,11 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
     /* Peripheral clock disable */
     __HAL_RCC_RTC_DISABLE();
     __HAL_RCC_RTCAPB_CLK_DISABLE();
-
-    /* RTC interrupt Deinit */
-    HAL_NVIC_DisableIRQ(RTC_TAMP_IRQn);
   /* USER CODE BEGIN RTC_MspDeInit 1 */
 
   /* USER CODE END RTC_MspDeInit 1 */
   }
-} 
+}
 
 /* USER CODE BEGIN 1 */
 

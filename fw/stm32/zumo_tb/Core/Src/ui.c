@@ -185,7 +185,7 @@ void ui_update(uint8_t bInit)
 		int u;
 
 		u = API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_MV);
-		sprintf(tmpstr,"UBAT:%4d",(int)u);
+		sprintf(tmpstr,"UBAT:%4d ",(int)u);
 		if( u > UBAT_FULL )
 		{
 			ILI9341_Draw_Text(tmpstr, 0, 1+(r)*UI_CHAR_HEIGHT, GREEN, UI_CHAR_SIZE, UI_BG_COLOR);
@@ -224,11 +224,11 @@ void ui_update(uint8_t bInit)
 		r++;
 
 		u = API_I2C1_u16Get(I2C_REG_TB_U16_UCHARGE_MV);
-		sprintf(tmpstr,"UCH:%4d",u);
+		sprintf(tmpstr,"UCH:%4d ",u);
 		ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 
 		u = API_I2C1_u16Get(I2C_REG_TB_U16_TEMP_C);
-		sprintf(tmpstr,"Temp:%2d",u);
+		sprintf(tmpstr,"Temp:%2d ",u);
 		ILI9341_Draw_Text(tmpstr, 0, 1+(r++)*UI_CHAR_HEIGHT, UI_FG_COLOR_1, UI_CHAR_SIZE, UI_BG_COLOR);
 	}
 

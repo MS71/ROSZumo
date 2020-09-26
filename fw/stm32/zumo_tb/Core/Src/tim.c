@@ -152,10 +152,10 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
   /* USER CODE BEGIN TIM16_MspPostInit 0 */
 
   /* USER CODE END TIM16_MspPostInit 0 */
-  
+
     __HAL_RCC_GPIOD_CLK_ENABLE();
-    /**TIM16 GPIO Configuration    
-    PD0     ------> TIM16_CH1 
+    /**TIM16 GPIO Configuration
+    PD0     ------> TIM16_CH1
     */
     GPIO_InitStruct.Pin = O_LIDAR_M_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -199,7 +199,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
   /* USER CODE END TIM16_MspDeInit 1 */
   }
-} 
+}
 
 /* USER CODE BEGIN 1 */
 

@@ -29,7 +29,6 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32g0xx_hal.h"
-#include "stm32g0xx_ll_system.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -66,7 +65,6 @@ void Error_Handler(void);
 #define DC_GPIO_Port GPIOC
 #define KEY1_Pin GPIO_PIN_13
 #define KEY1_GPIO_Port GPIOC
-#define KEY1_EXTI_IRQn EXTI4_15_IRQn
 #define KEY2_Pin GPIO_PIN_14
 #define KEY2_GPIO_Port GPIOC
 #define KEY2_EXTI_IRQn EXTI4_15_IRQn
