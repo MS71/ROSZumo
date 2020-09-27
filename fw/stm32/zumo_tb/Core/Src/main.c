@@ -119,7 +119,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_I2C1_Init();
   MX_SPI1_Init();
   MX_TIM1_Init();
   MX_RTC_Init();
@@ -127,6 +126,7 @@ int main(void)
   MX_TIM16_Init();
   MX_LPTIM1_Init();
   MX_IWDG_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   __HAL_RCC_PWR_CLK_ENABLE();
@@ -198,6 +198,17 @@ int main(void)
 	//printf("main() ...\n");
 	while (1)
 	{
+#if 0
+	{
+	    GPIO_InitTypeDef GPIO_InitStruct = {0};
+		GPIO_InitStruct.Pin = GPIO_PIN_9;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_9);
+	}
+#endif
+
 #ifdef ENABLE_SEMI_PRINTF
 #if 0
 		printf("main() u_bat=%d u_charge=%d temp=%d charge=%d off=%d\n",

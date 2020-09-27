@@ -16,7 +16,9 @@
 
 #include "5x5_font.h"
 
+#ifdef HAL_I2C1_MODULE_ENABLED
 #include "i2c.h"
+#endif
 #include "ui.h"
 #include "pm.h"
 

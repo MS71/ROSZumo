@@ -78,7 +78,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 #endif
 
 #ifdef ENABLE_IRQ_ADC
-	int i;
 	uint32_t sum_vdda = 0;
 	uint32_t sum_ucharge = 0;
 	uint32_t sum_ubat = 0;
@@ -375,6 +374,7 @@ void pm_init()
 		Error_Handler();
 	}
 
+#if 1
 	if (HAL_ADC_Start_DMA(&hadc1,
 			(uint32_t *)aADCxConvertedData,
 			ADC_CONVERTED_DATA_BUFFER_SIZE
@@ -383,6 +383,7 @@ void pm_init()
 		/* ADC conversion start error */
 		Error_Handler();
 	}
+#endif
 
 	API_I2C1_u8Set(I2C_REG_TB_U8_PWRCNTDWN,PWRCNTDWN_START);
 	API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE_NEXT,PWRMODE_AUTO);
