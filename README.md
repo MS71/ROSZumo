@@ -21,6 +21,8 @@ Components:
 * low power design (shutdown and wakeup)
 * optional Stereo/Quad SPI Camera
 
+![alt text](hw/architecure_01.png)
+
 ![alt text](images/zumoros_01.jpg)
 
 ![alt text](images/zumoros_02.jpg)
