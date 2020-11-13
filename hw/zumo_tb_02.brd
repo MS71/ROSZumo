@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.5.2">
+<eagle version="9.6.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -9621,7 +9621,7 @@ Source: www.farnell.com/datasheets/247.pdf</description>
 <wire x1="44.0030625" y1="87.4141" x2="43.7617625" y2="87.1728" width="0.381" layer="1"/>
 <wire x1="43.7617625" y1="87.1728" x2="42.1484875" y2="87.1728" width="0.381" layer="1"/>
 </signal>
-<signal name="ZUMO_VREG">
+<signal name="VREG">
 <contactref element="SJ8" pad="1"/>
 <contactref element="SV2" pad="10"/>
 <wire x1="27.94" y1="25.3746" x2="29.6926" y2="25.3746" width="0.1524" layer="16"/>

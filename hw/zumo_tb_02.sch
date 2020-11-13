@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.5.2">
+<eagle version="9.6.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -44067,7 +44067,7 @@ Source: 008-0260-0_E.pdf</description>
 <label x="15.24" y="71.12" size="1.016" layer="95" xref="yes"/>
 </segment>
 </net>
-<net name="ZUMO_VREG" class="0">
+<net name="VREG" class="0">
 <segment>
 <pinref part="SJ8" gate="1" pin="1"/>
 <wire x1="22.86" y1="243.84" x2="25.4" y2="243.84" width="0.1524" layer="91"/>
