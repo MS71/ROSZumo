@@ -79,6 +79,7 @@ void MX_I2C1_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 void API_I2C1_Init(void);
+void API_I2C1_Restart(void);
 
 uint8_t  API_I2C1_u8Get(uint16_t addr);
 uint16_t API_I2C1_u16Get(uint16_t addr);
@@ -88,7 +89,7 @@ void API_I2C1_u8Set(uint16_t addr, uint8_t data);
 void API_I2C1_u16Set(uint16_t addr, uint16_t data);
 void API_I2C1_u32Set(uint16_t addr, uint32_t data);
 
-uint8_t API_I2C1_u8WRFlag(uint16_t addr);
+uint8_t API_I2C1_u8WRFlag(uint16_t addr,uint8_t w);
 
 /* USER CODE END Prototypes */
 

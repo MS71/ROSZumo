@@ -41,7 +41,7 @@ static uint32_t ui_time()
 
 static void ui_update_terminal()
 {
-	if( API_I2C1_u8WRFlag(I2C_REG_TB_U16_TERMINALBUFFER) != 0 )
+	if( API_I2C1_u8WRFlag(I2C_REG_TB_U16_TERMINALBUFFER,1) != 0 )
 	{
 		int x = 0;
 		int y = UI_H - CHAR_HEIGHT;

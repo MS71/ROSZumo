@@ -10,10 +10,12 @@
 
 #define UBAT_MIN_CHARGE (4*400)
 #define UBAT_MIN (4*1150)
+#define UBAT_MIN_ON (4*1000)
 #define UBAT_MID (4*1200)
 #define UBAT_CHARGE_A (4*1250)
 #define UBAT_FULL (4*1300)
-#define UBAT_MAX (4*1400)
+#define UBAT_MAX (4*1375)
+#define UBAT_CHARGE_MAX (4*1380)
 //#define UBAT_MAX (4*1500)
 #define U_CHARGE_MIN (UBAT_MID)
 #define U_CHARGE_MAX (8000)

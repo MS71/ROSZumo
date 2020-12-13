@@ -64,8 +64,10 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void FastSystemClock_Config(void);
+uint8_t sysfastclock = 0;
 extern void initialise_monitor_handles(void);
+void vUpdateRSTGPIOs();
 
 /* USER CODE END PFP */
 
@@ -172,7 +174,24 @@ int main(void)
 
   pm_init();
 
+  /*
+  HAL_GPIO_WritePin(O_L_RST_0_GPIO_Port,O_L_RST_0_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_1_GPIO_Port,O_L_RST_1_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_2_GPIO_Port,O_L_RST_2_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_3_GPIO_Port,O_L_RST_3_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_4_GPIO_Port,O_L_RST_4_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_5_GPIO_Port,O_L_RST_5_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_6_GPIO_Port,O_L_RST_6_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_7_GPIO_Port,O_L_RST_7_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_8_GPIO_Port,O_L_RST_8_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_9_GPIO_Port,O_L_RST_9_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_10_GPIO_Port,O_L_RST_10_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_L_RST_11_GPIO_Port,O_L_RST_11_Pin,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(O_BNO055_RESET_GPIO_Port,O_BNO055_RESET_Pin,GPIO_PIN_RESET);
+*/
+
   API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0x0000);
+  vUpdateRSTGPIOs();
 
   API_I2C1_u8Set(I2C_REG_TB_U8_WIFIFST,0x00);
   API_I2C1_u32Set(I2C_REG_TB_U32_IPADDR,0x00000000);
@@ -201,11 +220,11 @@ int main(void)
 #if 0
 	{
 	    GPIO_InitTypeDef GPIO_InitStruct = {0};
-		GPIO_InitStruct.Pin = GPIO_PIN_9;
+		GPIO_InitStruct.Pin = GPIO_PIN_10;
 		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-		HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_9);
+		HAL_GPIO_TogglePin(GPIOA,GPIO_PIN_10);
 	}
 #endif
 
@@ -262,25 +281,23 @@ int main(void)
 
 		API_I2C1_u32Set(I2C_REG_TB_U32_LOOP_CNT,API_I2C1_u32Get(I2C_REG_TB_U32_LOOP_CNT)+1);
 
-		if(API_I2C1_u8WRFlag(I2C_REG_TB_U16_VL53L1X_RSTREG)!=0)
-		{
-			int bit=0;
-			uint16_t r = API_I2C1_u16Get(I2C_REG_TB_U16_VL53L1X_RSTREG);
-			HAL_GPIO_WritePin(O_L_RST_0_GPIO_Port,O_L_RST_0_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_1_GPIO_Port,O_L_RST_1_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_2_GPIO_Port,O_L_RST_2_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_3_GPIO_Port,O_L_RST_3_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_4_GPIO_Port,O_L_RST_4_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_5_GPIO_Port,O_L_RST_5_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_6_GPIO_Port,O_L_RST_6_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_7_GPIO_Port,O_L_RST_7_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_8_GPIO_Port,O_L_RST_8_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_9_GPIO_Port,O_L_RST_9_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_10_GPIO_Port,O_L_RST_10_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(O_L_RST_11_GPIO_Port,O_L_RST_11_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		vUpdateRSTGPIOs();
 
-			bit=15;
-			HAL_GPIO_WritePin(O_BNO055_RESET_GPIO_Port,O_BNO055_RESET_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		if( sysfastclock == 1 )
+		{
+			if( HAL_GPIO_ReadPin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin) == GPIO_PIN_SET )
+			{
+				SystemClock_Config();
+				sysfastclock = 0;
+			}
+		}
+		else
+		{
+			if( HAL_GPIO_ReadPin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin) == GPIO_PIN_RESET )
+			{
+				FastSystemClock_Config();
+				sysfastclock = 1;
+			}
 		}
 
 #ifdef ENABLE_LCD_UI
@@ -331,7 +348,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV8;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV64;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
@@ -343,7 +360,7 @@ void SystemClock_Config(void)
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1
                               |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_ADC
                               |RCC_PERIPHCLK_TIM1;
-  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
   PeriphClkInit.Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI;
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_HSI;
   PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLKSOURCE_PLL;
@@ -356,6 +373,99 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void FastSystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+
+  /** Configure the main internal regulator output voltage
+  */
+  HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSIDiv = RCC_HSI_DIV1;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+  RCC_OscInitStruct.PLL.PLLN = 8;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Initializes the peripherals clocks
+  */
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_ADC
+                              |RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
+  PeriphClkInit.Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI;
+  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_HSI;
+  PeriphClkInit.Tim1ClockSelection = RCC_TIM1CLKSOURCE_PLL;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+void vUpdateRSTGPIOs()
+{
+	if(API_I2C1_u8WRFlag(I2C_REG_TB_U16_VL53L1X_RSTREG,2)!=0)
+	{
+		int bit=0;
+		uint16_t r = API_I2C1_u16Get(I2C_REG_TB_U16_VL53L1X_RSTREG);
+		HAL_GPIO_WritePin(O_L_RST_0_GPIO_Port,O_L_RST_0_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_1_GPIO_Port,O_L_RST_1_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_2_GPIO_Port,O_L_RST_2_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_3_GPIO_Port,O_L_RST_3_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_4_GPIO_Port,O_L_RST_4_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_5_GPIO_Port,O_L_RST_5_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_6_GPIO_Port,O_L_RST_6_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_7_GPIO_Port,O_L_RST_7_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_8_GPIO_Port,O_L_RST_8_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_9_GPIO_Port,O_L_RST_9_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_10_GPIO_Port,O_L_RST_10_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(O_L_RST_11_GPIO_Port,O_L_RST_11_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+
+		bit=15;
+		HAL_GPIO_WritePin(O_BNO055_RESET_GPIO_Port,O_BNO055_RESET_Pin,((r>>(bit++))&1)?GPIO_PIN_SET:GPIO_PIN_RESET);
+	}
+}
+
+void HAL_I2C_MemWriteCB(uint8_t addr)
+{
+	if( addr >= I2C_REG_TB_U16_VL53L1X_RSTREG && addr <= (I2C_REG_TB_U16_VL53L1X_RSTREG+1) )
+	{
+		vUpdateRSTGPIOs();
+	}
+}
 
 /* USER CODE END 4 */
 

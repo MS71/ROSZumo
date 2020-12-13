@@ -232,7 +232,8 @@ void pm_charge_step()
 				( u_charge < U_CHARGE_MIN ) ||
 				( u_charge > U_CHARGE_MAX ) ||
 				( u_bat < UBAT_MIN_CHARGE ) ||
-				( u_bat > UBAT_MAX ) ||
+				( charge_current_on==0 && u_bat > UBAT_MAX ) ||
+				( charge_current_on==1 && u_bat > UBAT_CHARGE_MAX ) ||
 				( charge_current_on==1 && ((u_charge-u_bat) > U_CHARGE_MAX_DIFF) ) || /* limit the charge current */
 				(u_charge < u_bat))
 		{
@@ -243,6 +244,7 @@ void pm_charge_step()
 			{
 				_ubatprev = u_bat;
 				ubat_nocharge_mean_mv = (3*ubat_nocharge_mean_mv + u_bat)/4;
+				API_I2C1_u16Set(I2C_REG_TB_U16_UBAT_IDLE_MV,ubat_nocharge_mean_mv);
 			}
 #ifdef O_LED2_Pin
 			HAL_GPIO_WritePin(O_LED2_GPIO_Port,O_LED2_Pin,GPIO_PIN_RESET);
@@ -390,12 +392,11 @@ void pm_init()
 	API_I2C1_u8Set(I2C_REG_TB_U8_PWR_TMPON,PWR_TMPON_TIME);
     API_I2C1_u8Set(I2C_REG_TB_U8_PWRMODE,HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR0)&0xff);
 
-	API_I2C1_u16Set(I2C_REG_TB_U16_TON_TOUT,0);
+	API_I2C1_u16Set(I2C_REG_TB_U16_TON_TOUT,5);
 	API_I2C1_u16Set(I2C_REG_TB_U16_TON_PERIOD,5);
 	API_I2C1_u16Set(I2C_REG_TB_U16_TON_WDG,0);
 	API_I2C1_u16Set(I2C_REG_TB_U16_TOFF_TOUT,0);
 	API_I2C1_u16Set(I2C_REG_TB_U16_TOFF_PERIOD,5*60);
-	API_I2C1_u16Set(I2C_REG_TB_U16_TON_TOUT,API_I2C1_u16Get(I2C_REG_TB_U16_TON_PERIOD));
 	//__HAL_RCC_PWR_CLK_ENABLE();
 }
 
@@ -426,6 +427,18 @@ void pm_loop()
 			handle_charge = 0;
 			pm_charge_step();
 			tick_1s = 1;
+#if 0
+			{
+				if( API_I2C1_u16Get(I2C_REG_TB_U16_VL53L1X_RSTREG) == 0 )
+				{
+					  API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0xffff);
+				}
+				else
+				{
+					  API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0x0000);
+				}
+			}
+#endif
 		}
 	}
 
@@ -486,9 +499,9 @@ void pm_loop()
 
 		if( pm == PWRMODE_AUTO )
 		{
-			uint16_t x = API_I2C1_u16Get(I2C_REG_TB_U16_TON_TOUT);
-			if( x != 0 )
+			if( API_I2C1_u16Get(I2C_REG_TB_U16_TON_TOUT) != 0 )
 			{
+				uint16_t x = API_I2C1_u16Get(I2C_REG_TB_U16_TON_TOUT);
 				if(tick_1s==1) x--;
 				API_I2C1_u16Set(I2C_REG_TB_U16_TON_TOUT,x);
 				if( (x) == 0 )
@@ -517,9 +530,14 @@ void pm_loop()
 					}
 				}
 			}
+			else
+			{
+				zumo_on = 0;
+			}
 
 			if( API_I2C1_u16Get(I2C_REG_TB_U16_TON_WDG) != 0 )
 			{
+				uint16_t x = API_I2C1_u16Get(I2C_REG_TB_U16_TON_WDG);
 				if(tick_1s==1) x--;
 				API_I2C1_u16Set(I2C_REG_TB_U16_TON_WDG,x);
 				if( (x) == 0 )
@@ -529,7 +547,14 @@ void pm_loop()
 			}
 		}
 
-		if( API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_IDLE_MV) < UBAT_MIN )
+		uint16_t u = API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_IDLE_MV);
+#if 0
+		if( u == 0 )
+		{
+			u = API_I2C1_u16Get(I2C_REG_TB_U16_UBAT_MEAN_MV);
+		}
+#endif
+		if( u < UBAT_MIN_ON )
 		{
 			zumo_on = 0;
 		}
@@ -552,6 +577,7 @@ void pm_loop()
 				GPIO_InitStruct.Pin = ZUMO_SHDN_Pin;
 				GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 				GPIO_InitStruct.Pull = GPIO_PULLUP;
+				API_I2C1_Restart();
 				HAL_GPIO_Init(ZUMO_SHDN_GPIO_Port, &GPIO_InitStruct);
 				HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_RESET);
 
@@ -574,6 +600,8 @@ void pm_loop()
 				HAL_GPIO_WritePin(GPIOC, RST_Pin, GPIO_PIN_RESET);
 
 				API_I2C1_u16Set(I2C_REG_TB_U16_TOFF_TOUT,API_I2C1_u16Get(I2C_REG_TB_U16_TOFF_PERIOD));
+			    API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0x0000);
+				API_I2C1_Restart();
 			}
 			//HAL_SPI_DeInit(&hspi1);
 
