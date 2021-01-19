@@ -1,6 +1,7 @@
 #include <avr/sleep.h>
 #include <Zumo32U4.h>
 #include <Wire.h>
+#include <avr/wdt.h>
 
 #define CMD_BEEP                0x01
 #define CMD_BATLEVEL            0x02
@@ -10,12 +11,24 @@
 #define CMD_GET_STATUS          0x06
 #define CMD_SET_LED             0x07
 #define CMD_PUTCHAR             0x08
+#define CMD_WATCHDOG            0x09
 
+#undef ENABLE_WDT
+#define ENABLE_SLEEP
+#define ENABLE_LINE_SENSOR
+#define ENABLE_PROX_SENSOR
+Zumo32U4ButtonA           buttonA;
+Zumo32U4ButtonB           buttonB;
+Zumo32U4ButtonC           buttonC;
 Zumo32U4Buzzer            buzzer;
 Zumo32U4Motors            motors;
 Zumo32U4Encoders          encoders;
+#ifdef ENABLE_LINE_SENSOR
 Zumo32U4LineSensors       lineSensors;
+#endif
+#ifdef ENABLE_PROX_SENSOR
 Zumo32U4ProximitySensors  proxSensors;
+#endif
 #define NUM_SENSORS 5
 uint16_t lineSensorValues[NUM_SENSORS];
 bool useEmitters = true;
@@ -29,22 +42,68 @@ volatile uint16_t bat = 0;
 volatile int16_t enc_l = 0;
 volatile int16_t enc_r = 0;
 
+uint16_t buzzer_freq = 0;
+uint16_t buzzer_duration = 0;
+uint8_t buzzer_volume = 0;
+
+uint8_t enable_prox_sensor = 0;
+uint8_t enable_line_sensor = 0;
+
 void setPwmDutyA(int val) {
   TC4H = val >> 8;
   OCR4A = 0xFF & val;
 }
 
+#if 0
+uint8_t xxx = 0;
+ISR(WDT_vect)
+{
+  if(xxx == 0 )
+  {
+    xxx = 1;
+    ledYellow(1);
+  }
+  else
+  {
+    xxx = 0;
+    ledYellow(0);
+  }
+}
+#endif
+
+#if 0
+ISR(TIMER0_COMPA_vect) 
+{
+  xxx++;
+  if(xxx < 128 )
+  {
+    ledYellow(1);
+  }
+  else
+  {
+    ledYellow(0);
+  }
+}
+#endif
+
 void setup()
 {
+  ledGreen(0);  
   Serial.begin(115200);
   Serial1.begin(115200);
   Serial.write("ZUMO: starting ...\n");
   pinMode(13, OUTPUT);
   digitalWrite(13, 0);
 
-  lineSensors.initFiveSensors();
+  motors.setLeftSpeed(0);
+  motors.setRightSpeed(0);
 
-  buzzer.playFrequency(100, 100, 10);
+#ifdef ENABLE_SENSORS
+  lineSensors.initFiveSensors();
+#endif
+
+  //buzzer.playFrequency(55, 250, 8);
+  //while (buzzer.isPlaying());
 
 #ifdef USE_RPISLAVELIB
 #else
@@ -80,28 +139,73 @@ void setup()
   setPwmDutyA(0);
 #endif
 
+#ifdef ENABLE_LINE_SENSOR
   lineSensors.initThreeSensors();
+  lineSensors.emittersOff();
+#endif
+#ifdef ENABLE_PROX_SENSOR
   proxSensors.pullupsOn();
   proxSensors.initThreeSensors();
-  buzzer.playFrequency(1000, 50, 10);
+  proxSensors.lineSensorEmittersOff();
+#endif  
+  //buzzer.playFrequency(1000, 50, 10);
+
+  //buzzer.playFrequency(220, 50, 100);
+  //while (buzzer.isPlaying());
+
+  Serial.write("ZUMO: starting ... done\n");
+  ledGreen(0);  
+#ifdef ENABLE_WDT
+  wdt_enable(WDTO_2S);
+#endif
+#if 0
+    // setup of the WDT
+    MCUSR &= ~(1 << WDRF); // remove reset flag
+    WDTCSR |= (1 << WDCE) | (1 << WDE); // set WDCE, access prescaler
+    WDTCSR = 1 << WDP0 | 1 << WDP1 | 1 << WDP2; // set prescaler bits to to 2s
+    WDTCSR |= 1 << WDIE; // access WDT interrupt
+#endif  
+
+  //TIMSK0 |= _BV(OCIE0A);
+  
+  buzzer_freq = 440;
+  buzzer_duration = 250;
+  buzzer_volume = 10;
 }
 
 void loop()
 {
+  //ledRed((millis()%1000)<500);
   int16_t tmp_l = encoders.getCountsAndResetLeft();
   int16_t tmp_r = encoders.getCountsAndResetRight();
   uint16_t tmp_bat = readBatteryMillivolts();
 
-  lineSensors.read(lineSensorValues, useEmitters ? QTR_EMITTERS_ON : QTR_EMITTERS_OFF);
-  proxSensors.read();
-
-  proxSensorsValues[0] = proxSensors.countsLeftWithLeftLeds();
-  proxSensorsValues[1] = proxSensors.countsLeftWithRightLeds();
-  proxSensorsValues[2] = proxSensors.countsFrontWithLeftLeds();
-  proxSensorsValues[3] = proxSensors.countsFrontWithRightLeds();
-  proxSensorsValues[4] = proxSensors.countsRightWithLeftLeds();
-  proxSensorsValues[5] = proxSensors.countsRightWithRightLeds();
-
+#ifdef ENABLE_LINE_SENSOR
+  if( enable_line_sensor == 1 )
+  {
+    lineSensors.read(lineSensorValues, useEmitters ? QTR_EMITTERS_ON : QTR_EMITTERS_OFF);
+  }
+  else
+  {
+    lineSensors.emittersOff();
+  }
+#endif
+#ifdef ENABLE_PROX_SENSOR
+  if( enable_prox_sensor == 1 )
+  {
+    proxSensors.read();
+    proxSensorsValues[0] = proxSensors.countsLeftWithLeftLeds();
+    proxSensorsValues[1] = proxSensors.countsLeftWithRightLeds();
+    proxSensorsValues[2] = proxSensors.countsFrontWithLeftLeds();
+    proxSensorsValues[3] = proxSensors.countsFrontWithRightLeds();
+    proxSensorsValues[4] = proxSensors.countsRightWithLeftLeds();
+    proxSensorsValues[5] = proxSensors.countsRightWithRightLeds();
+  }
+  else
+  {
+    proxSensors.lineSensorEmittersOff();    
+  }
+#endif
   cli();
   loopcnt++;
   bat = tmp_bat;
@@ -109,6 +213,18 @@ void loop()
   enc_r += tmp_r;
   sei();
 
+  if( buzzer_freq != 0 )
+  {
+      buzzer.playFrequency(buzzer_freq, buzzer_duration, buzzer_volume);
+      while (buzzer.isPlaying())
+      {
+         wdt_reset();
+      }
+      buzzer_freq = 0;
+  }
+
+
+#if 0
   // read from port 1, send to port 0:
   if (Serial1.available()) {
     int inByte = Serial1.read();
@@ -120,14 +236,33 @@ void loop()
     int inByte = Serial.read();
     Serial1.write(inByte);
   }
+#endif
+
+#if 0
+  if (buttonC.isPressed())
+  {
+    ledRed(1);
+    while(1); 
+  }
+#endif  
   
 #if 1
+  ledRed(0);  
+#ifdef ENABLE_SLEEP
+  set_sleep_mode(SLEEP_MODE_PWR_SAVE);
+#else
   set_sleep_mode(SLEEP_MODE_IDLE);
+#endif  
   sleep_enable();
   sleep_mode();
   /** Das Programm läuft ab hier nach dem Aufwachen weiter. **/
   /** Es wird immer zuerst der Schlafmodus disabled.        **/
   sleep_disable();
+  ledRed(1);  
+#endif
+
+#ifdef ENABLE_WDT
+ wdt_reset();
 #endif
 }
 
@@ -166,10 +301,9 @@ void receiveEvent(int howMany)
       case CMD_BEEP:
         if ( n >= (2 + 2 + 1) )
         {
-          uint16_t freq = MSG_UINT16(&msg[0]);
-          uint16_t duration = MSG_UINT16(&msg[2]);
-          uint8_t volume = MSG_UINT8(&msg[2 + 2]);
-          buzzer.playFrequency(freq, duration, volume);
+          buzzer_freq = MSG_UINT16(&msg[0]);
+          buzzer_duration = MSG_UINT16(&msg[2]);
+          buzzer_volume = MSG_UINT8(&msg[2 + 2]);
         }
         break;
       case CMD_MOTORS_SET_SPEED:
@@ -191,13 +325,52 @@ void receiveEvent(int howMany)
             ledRed((MSG_UINT8(&msg[0])>>0)&1);
             ledYellow((MSG_UINT8(&msg[0])>>1)&1);
             ledGreen((MSG_UINT8(&msg[0])>>2)&1);
+
+            enable_prox_sensor = ((MSG_UINT8(&msg[0])>>4)&1);
+            enable_line_sensor = ((MSG_UINT8(&msg[0])>>5)&1);
         }
         break;
       case CMD_PUTCHAR:
         {
-            Serial1.write(MSG_UINT8(&msg[0]));
+          int k=0;          
+          for(k=0;k<n;k++)
+          {
+            Serial1.write(MSG_UINT8(&msg[k]));
+          }
         }
-        break;        
+        break;      
+      case CMD_WATCHDOG:
+        {
+          if( msg[0] == 1 )
+          {
+            wdt_enable(WDTO_500MS);
+          }
+          else if( msg[0] == 2 )
+          {
+            wdt_enable(WDTO_1S);
+          }
+          else if( msg[0] == 3 )
+          {
+            wdt_enable(WDTO_2S);
+          }
+          else if( msg[0] == 4 )
+          {
+            wdt_enable(WDTO_4S);
+          }
+          else if( msg[0] == 5 )
+          {
+            wdt_enable(WDTO_8S);
+          }
+          else if( msg[0] == 6 )
+          {
+            wdt_disable();
+          }
+          else if( msg[0] == 7 )
+          {
+            wdt_reset();
+          }
+        }
+        break;               
     }
   }
   ledGreen(0);
@@ -207,7 +380,7 @@ void requestEvent()
 {
   ledGreen(1);
   uint8_t idx = 0;
-  uint8_t buf[4 + 2 + 4 + 2*NUM_SENSORS + 6 ];
+  uint8_t buf[4 + 2 + 4 + 2*NUM_SENSORS + 6 + 1];
 
   buf[idx++] = (uint8_t)(loopcnt >> 24) & 0xff;
   buf[idx++] = (uint8_t)(loopcnt >> 16) & 0xff;
@@ -243,6 +416,11 @@ void requestEvent()
     buf[idx++] = proxSensorsValues[i++];
     buf[idx++] = proxSensorsValues[i++];
   }
+
+  buf[idx++] = (usbPowerPresent()?(1<<4):0)|
+               (buttonA.isPressed()?(1<<0):0)|
+               (buttonB.isPressed()?(1<<1):0)|
+               (buttonC.isPressed()?(1<<2):0);
 
   Wire.write(buf, sizeof(buf));
   ledGreen(0);
