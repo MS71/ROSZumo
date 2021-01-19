@@ -502,7 +502,14 @@ void pm_loop()
 			if( API_I2C1_u16Get(I2C_REG_TB_U16_TON_TOUT) != 0 )
 			{
 				uint16_t x = API_I2C1_u16Get(I2C_REG_TB_U16_TON_TOUT);
+#ifdef ENABLE_LCD_UI
 				if(tick_1s==1) x--;
+#else
+				if( HAL_GPIO_ReadPin(KEY2_GPIO_Port,KEY2_Pin) != GPIO_PIN_RESET ) /* keep zumo on when jumper is set*/
+				{
+					if(tick_1s==1) x--;
+				}
+#endif
 				API_I2C1_u16Set(I2C_REG_TB_U16_TON_TOUT,x);
 				if( (x) == 0 )
 				{
@@ -597,7 +604,7 @@ void pm_loop()
 				GPIO_InitStruct.Pull = GPIO_PULLUP;
 				HAL_GPIO_Init(ZUMO_SHDN_GPIO_Port, &GPIO_InitStruct);
 				HAL_GPIO_WritePin(ZUMO_SHDN_GPIO_Port,ZUMO_SHDN_Pin,GPIO_PIN_SET);
-				HAL_GPIO_WritePin(GPIOC, RST_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(LCD_RST_Port, LCD_RST_PIN, GPIO_PIN_RESET);
 
 				API_I2C1_u16Set(I2C_REG_TB_U16_TOFF_TOUT,API_I2C1_u16Get(I2C_REG_TB_U16_TOFF_PERIOD));
 			    API_I2C1_u16Set(I2C_REG_TB_U16_VL53L1X_RSTREG,0x0000);

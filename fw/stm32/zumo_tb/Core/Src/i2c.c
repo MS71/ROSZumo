@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -33,23 +33,16 @@
 
  */
 
+uint8_t HAL_I2C_ErrorFlag = 1;
 
 /* USER CODE END 0 */
 
 I2C_HandleTypeDef hi2c1;
-uint8_t HAL_I2C_ErrorFlag = 0;
-
-uint8_t MX_I2C_GetErrorFlag(void)
-{
-	uint8_t ret = HAL_I2C_ErrorFlag;
-	HAL_I2C_ErrorFlag = 0;
-	return ret;
-}
 
 /* I2C1 init function */
 void MX_I2C1_Init(void)
 {
-  HAL_I2C_ErrorFlag = 0;
+
   hi2c1.Instance = I2C1;
   hi2c1.Init.Timing = 0x00300B29;
   hi2c1.Init.OwnAddress1 = 32;
@@ -168,7 +161,7 @@ void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t a
 	case I2C_DIRECTION_TRANSMIT:
 		transferState = getRegisterAddress;
 		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 1, I2C_FIRST_FRAME) != HAL_OK) {
-			//Error();
+			Error_Handler();
 		}
 		break;
 
@@ -187,9 +180,14 @@ void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t a
 
 		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
 			// Error here!!! (HAL_BUSY)
-			//Error();
+			Error_Handler();
 		}
 		break;
+
+	default:
+		Error_Handler();
+		break;
+
 	}
 }
 
@@ -209,7 +207,7 @@ void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
 			// Error here!!! (HAL_BUSY)
-			//Error();
+			Error_Handler();
 		}
 		break;
 	}
@@ -221,13 +219,13 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 		registerAddress = receiveBuffer;
 		transferState = getData;
 		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 1, I2C_FIRST_FRAME) != HAL_OK) {
-			//Error();
+			Error_Handler();
 		}
 		break;
 
 	case getData:
 		if (HAL_I2C_Slave_Sequential_Receive_IT(hi2c, &receiveBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
-			//Error();
+			Error_Handler();
 		}
 		else if(registerAddress == 0xff )
 		{
@@ -253,9 +251,30 @@ void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *hi2c) {
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
-	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_AF) {
-		HAL_I2C_ErrorFlag = 1;
+#if 0
+	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_BERR) {
+		Error_Handler();
 	}
+	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_ARLO) {
+		Error_Handler();
+	}
+#endif
+	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_AF) {
+		Error_Handler();
+	}
+#if 0
+	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_OVR) {
+		Error_Handler();
+	}
+	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_DMA) {
+		Error_Handler();
+	}
+#endif
+#if 0
+	if (HAL_I2C_GetError(hi2c) != HAL_I2C_ERROR_TIMEOUT) {
+		Error_Handler();
+	}
+#endif
 }
 
 uint8_t API_I2C1_u8WRFlag(uint16_t addr,uint8_t w)
@@ -285,7 +304,7 @@ uint8_t API_I2C1_u8Get(uint16_t addr)
 	{
 		return i2c_buffer.u8[addr];
 	} else if( addr >= I2C_REG_TB_U16_TERMINALBUFFER && addr < (I2C_REG_TB_U16_TERMINALBUFFER+I2C_TERMINAL_BUFFER_SIZE) )
-	{
+    {
 		return i2c_terminal_buffer[addr-I2C_REG_TB_U16_TERMINALBUFFER];
 	}
 	return 0;
@@ -357,6 +376,10 @@ void API_I2C1_Init(void)
 	{
 		Error_Handler();
 	}
+}
+
+void API_I2C1_Handle(void)
+{
 }
 
 void API_I2C1_Restart(void)

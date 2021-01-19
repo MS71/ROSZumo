@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -70,7 +70,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     PA12 [PA10]     ------> SPI1_MOSI
     PA15     ------> SPI1_NSS
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15;
+    GPIO_InitStruct.Pin = SPI_CLK_Pin|SPI_MISO_Pin|SPI_MOSI_Pin|SPI_CS_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -100,7 +100,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     PA12 [PA10]     ------> SPI1_MOSI
     PA15     ------> SPI1_NSS
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5|GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15);
+    HAL_GPIO_DeInit(GPIOA, SPI_CLK_Pin|SPI_MISO_Pin|SPI_MOSI_Pin|SPI_CS_Pin);
 
   /* USER CODE BEGIN SPI1_MspDeInit 1 */
 

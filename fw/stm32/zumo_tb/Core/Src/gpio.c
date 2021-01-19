@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -59,11 +59,10 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, DC_Pin|O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin
-                          |O_L_RST_8_Pin|RST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin|O_L_RST_8_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, O_LED2_Pin|O_L_RST_10_Pin|CS_Pin|O_CHARGE_ON_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, O_LED2_Pin|O_L_RST_10_Pin|O_CHARGE_ON_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, O_L_RST_1_Pin|O_L_RST_10B12_Pin|O_L_RST_11_Pin|O_L_RST_3_Pin
@@ -73,25 +72,19 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOD, O_LEDSTRB_Pin|O_FLASH_CS_Pin|O_BUS_RESET_Pin|O_BNO055_RESET_Pin
                           |O_L_RST_0_Pin|O_L_RST_2_Pin|O_FLASH_HOLD_Pin|O_FLASH_WP_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PCPin PCPin PCPin PCPin */
-  GPIO_InitStruct.Pin = I_RPI_14_Pin|KEY1_Pin|I_INT_Pin|I_RPI_11_Pin;
+  /*Configure GPIO pins : PCPin PCPin PCPin PCPin
+                           PCPin PCPin PCPin PCPin */
+  GPIO_InitStruct.Pin = RPI_14_Pin|RPI_15_Pin|RPI_16_Pin|RPI_18_Pin
+                          |I_INT_Pin|RPI_11_Pin|RPI_12_Pin|RPI_13_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PCPin PCPin PCPin PCPin
-                           PCPin PCPin */
-  GPIO_InitStruct.Pin = DC_Pin|O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin
-                          |O_L_RST_8_Pin|RST_Pin;
+  /*Configure GPIO pins : PCPin PCPin PCPin PCPin */
+  GPIO_InitStruct.Pin = O_CAM_PWDN_Pin|O_LED1_Pin|O_L_RST_9_Pin|O_L_RST_8_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PCPin PCPin */
-  GPIO_InitStruct.Pin = KEY2_Pin|KEY0_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC2 PC3 */
@@ -102,8 +95,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF1_SPI2;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PAPin PAPin PAPin PAPin */
-  GPIO_InitStruct.Pin = O_LED2_Pin|O_L_RST_10_Pin|CS_Pin|O_CHARGE_ON_Pin;
+  /*Configure GPIO pins : PAPin PAPin PAPin */
+  GPIO_InitStruct.Pin = O_LED2_Pin|O_L_RST_10_Pin|O_CHARGE_ON_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -117,11 +110,11 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF1_USART2;
   HAL_GPIO_Init(U2_LIDAR_RX_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = I_RPI_CS1_Pin;
+  /*Configure GPIO pins : PAPin PAPin */
+  GPIO_InitStruct.Pin = RPI_CS0_Pin|RPI_CS1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(I_RPI_CS1_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PCPin PCPin */
   GPIO_InitStruct.Pin = U1_ESP_RXD_Pin|U1_ESP_TXD_Pin;
@@ -192,10 +185,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }
 

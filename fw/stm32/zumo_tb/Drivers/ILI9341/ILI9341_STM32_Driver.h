@@ -86,24 +86,13 @@
 
 #include "stm32g0xx_hal.h"
 #include "spi.h"
+#include "main.h"
 
 #define ILI9341_SCREEN_HEIGHT 240 
 #define ILI9341_SCREEN_WIDTH 	320
 
 //SPI INSTANCE
 #define HSPI_INSTANCE							&hspi1
-
-//CHIP SELECT PIN AND PORT, STANDARD GPIO
-#define LCD_CS_PORT								GPIOC
-#define LCD_CS_PIN								CS_Pin
-
-//DATA COMMAND PIN AND PORT, STANDARD GPIO
-#define LCD_DC_PORT								GPIOC
-#define LCD_DC_PIN								DC_Pin
-
-//RESET PIN AND PORT, STANDARD GPIO
-#define	LCD_RST_PORT							GPIOC
-#define	LCD_RST_PIN								RST_Pin
 
 
 #define BURST_MAX_SIZE 	500

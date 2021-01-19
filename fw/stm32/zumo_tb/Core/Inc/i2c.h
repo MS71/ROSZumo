@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -67,9 +67,13 @@ extern I2C_HandleTypeDef hi2c1;
 #define I2C_REG_TB_U16_TOFF_TOUT			0x0066
 #define I2C_REG_TB_U16_TOFF_PERIOD			0x0068
 
+#define I2C_REG_TB_U16_RPI_DIR				0x006A
+#define I2C_REG_TB_U16_RPI_READ				0x006C
+#define I2C_REG_TB_U16_RPI_WRITE			0x006E
+
 #define I2C_REG_TB_U16_VL53L1X_RSTREG		0x0070
 
-#define I2C_REG_TB_U16_TERMINALBUFFER		1000
+#define I2C_REG_TB_U16_TERMINALBUFFER		0x0078
 #define I2C_TERMINAL_BUFFER_SIZE 		    1000
 
 /* USER CODE END Private defines */
@@ -80,6 +84,7 @@ void MX_I2C1_Init(void);
 
 void API_I2C1_Init(void);
 void API_I2C1_Restart(void);
+void API_I2C1_Handle(void);
 
 uint8_t  API_I2C1_u8Get(uint16_t addr);
 uint16_t API_I2C1_u16Get(uint16_t addr);

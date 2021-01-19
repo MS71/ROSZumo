@@ -68,6 +68,7 @@ void FastSystemClock_Config(void);
 uint8_t sysfastclock = 0;
 extern void initialise_monitor_handles(void);
 void vUpdateRSTGPIOs();
+void vUpdateRPIGPIOs();
 
 /* USER CODE END PFP */
 
@@ -169,6 +170,11 @@ int main(void)
 #ifdef ENABLE_LCD_UI
   ui_init();
 #endif
+
+  API_I2C1_u16Set(I2C_REG_TB_U16_RPI_DIR,0x0000);
+  API_I2C1_u16Set(I2C_REG_TB_U16_RPI_WRITE,0x0000);
+  API_I2C1_u16Set(I2C_REG_TB_U16_RPI_READ,0x0000);
+  vUpdateRPIGPIOs();
 
   API_I2C1_Init();
 
@@ -282,6 +288,7 @@ int main(void)
 		API_I2C1_u32Set(I2C_REG_TB_U32_LOOP_CNT,API_I2C1_u32Get(I2C_REG_TB_U32_LOOP_CNT)+1);
 
 		vUpdateRSTGPIOs();
+		vUpdateRPIGPIOs();
 
 		if( sysfastclock == 1 )
 		{
@@ -304,6 +311,8 @@ int main(void)
 		ui_loop();
 #endif
 		pm_loop();
+
+		API_I2C1_Handle();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -459,11 +468,88 @@ void vUpdateRSTGPIOs()
 	}
 }
 
+void vUpdateRPIGPIOs()
+{
+	int i;
+	const struct
+	{
+		GPIO_TypeDef*	port;
+		uint16_t		pin;
+
+	} rpi_pins[16] = {
+			{RPI_11_GPIO_Port,RPI_11_Pin},
+			{RPI_12_GPIO_Port,RPI_12_Pin},
+			{RPI_13_GPIO_Port,RPI_13_Pin},
+			{RPI_14_GPIO_Port,RPI_14_Pin},
+			{RPI_15_GPIO_Port,RPI_15_Pin},
+			{RPI_16_GPIO_Port,RPI_16_Pin},
+			{RPI_18_GPIO_Port,RPI_18_Pin},
+			{SPI_MOSI_GPIO_Port,SPI_MOSI_Pin},
+			{SPI_MISO_GPIO_Port,SPI_MISO_Pin},
+			{SPI_CS_GPIO_Port,SPI_CS_Pin},
+			{SPI_CLK_GPIO_Port,SPI_CLK_Pin},
+			{RPI_CS0_GPIO_Port,RPI_CS0_Pin},
+			{RPI_CS1_GPIO_Port,RPI_CS1_Pin},
+			{NULL,0xffff},
+			{NULL,0xffff},
+			{NULL,0xffff},
+	};
+
+	uint16_t reg_dir = API_I2C1_u16Get(I2C_REG_TB_U16_RPI_DIR);
+	uint16_t reg_write = API_I2C1_u16Get(I2C_REG_TB_U16_RPI_WRITE);
+	uint16_t reg_read = API_I2C1_u16Get(I2C_REG_TB_U16_RPI_READ);
+
+	for( i=0; i<16 && rpi_pins[i].pin != 0xffff; i++)
+	{
+		uint8_t bit_dir = (reg_dir>>i)&1;
+		uint8_t bit_write = (reg_write>>i)&1;
+
+		if( bit_dir != 0 )
+		{
+			// should be an output
+
+			  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+			  GPIO_InitStruct.Pin = rpi_pins[i].pin;
+			  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+			  GPIO_InitStruct.Pull = GPIO_NOPULL;
+			  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+			  HAL_GPIO_Init(rpi_pins[i].port, &GPIO_InitStruct);
+
+			  if( bit_write != 0 )
+			  {
+				  HAL_GPIO_WritePin(rpi_pins[i].port, rpi_pins[i].pin, GPIO_PIN_SET);
+			  }
+			  else
+			  {
+				  HAL_GPIO_WritePin(rpi_pins[i].port, rpi_pins[i].pin, GPIO_PIN_RESET);
+			  }
+		}
+		reg_read &= ~(1<<i);
+		reg_read |= (HAL_GPIO_ReadPin(rpi_pins[i].port,rpi_pins[i].pin)==GPIO_PIN_SET)?(1<<i):0;
+	}
+	API_I2C1_u16Set(I2C_REG_TB_U16_RPI_READ,reg_read);
+
+
+}
+
 void HAL_I2C_MemWriteCB(uint8_t addr)
 {
 	if( addr >= I2C_REG_TB_U16_VL53L1X_RSTREG && addr <= (I2C_REG_TB_U16_VL53L1X_RSTREG+1) )
 	{
 		vUpdateRSTGPIOs();
+	}
+	else if( addr >= I2C_REG_TB_U16_RPI_DIR && addr <= (I2C_REG_TB_U16_RPI_DIR+1) )
+	{
+		vUpdateRPIGPIOs();
+	}
+	else if( addr >= I2C_REG_TB_U16_RPI_READ && addr <= (I2C_REG_TB_U16_RPI_READ+1) )
+	{
+		vUpdateRPIGPIOs();
+	}
+	else if( addr >= I2C_REG_TB_U16_RPI_WRITE && addr <= (I2C_REG_TB_U16_RPI_WRITE+1) )
+	{
+		vUpdateRPIGPIOs();
 	}
 }
 

@@ -59,15 +59,14 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define I2C_ADDR 0x10
-#define I_RPI_14_Pin GPIO_PIN_11
-#define I_RPI_14_GPIO_Port GPIOC
-#define DC_Pin GPIO_PIN_12
-#define DC_GPIO_Port GPIOC
-#define KEY1_Pin GPIO_PIN_13
-#define KEY1_GPIO_Port GPIOC
-#define KEY2_Pin GPIO_PIN_14
-#define KEY2_GPIO_Port GPIOC
-#define KEY2_EXTI_IRQn EXTI4_15_IRQn
+#define RPI_14_Pin GPIO_PIN_11
+#define RPI_14_GPIO_Port GPIOC
+#define RPI_15_Pin GPIO_PIN_12
+#define RPI_15_GPIO_Port GPIOC
+#define RPI_16_Pin GPIO_PIN_13
+#define RPI_16_GPIO_Port GPIOC
+#define RPI_18_Pin GPIO_PIN_14
+#define RPI_18_GPIO_Port GPIOC
 #define I_INT_Pin GPIO_PIN_15
 #define I_INT_GPIO_Port GPIOC
 #define O_CAM_PWDN_Pin GPIO_PIN_0
@@ -84,10 +83,12 @@ void Error_Handler(void);
 #define U2_LIDAR_RX_GPIO_Port GPIOA
 #define O_L_RST_10_Pin GPIO_PIN_4
 #define O_L_RST_10_GPIO_Port GPIOA
-#define CS_Pin GPIO_PIN_6
-#define CS_GPIO_Port GPIOA
-#define I_RPI_CS1_Pin GPIO_PIN_7
-#define I_RPI_CS1_GPIO_Port GPIOA
+#define SPI_CLK_Pin GPIO_PIN_5
+#define SPI_CLK_GPIO_Port GPIOA
+#define RPI_CS0_Pin GPIO_PIN_6
+#define RPI_CS0_GPIO_Port GPIOA
+#define RPI_CS1_Pin GPIO_PIN_7
+#define RPI_CS1_GPIO_Port GPIOA
 #define U1_ESP_RXD_Pin GPIO_PIN_4
 #define U1_ESP_RXD_GPIO_Port GPIOC
 #define U1_ESP_TXD_Pin GPIO_PIN_5
@@ -118,11 +119,16 @@ void Error_Handler(void);
 #define O_LEDSTRB_GPIO_Port GPIOD
 #define O_FLASH_CS_Pin GPIO_PIN_9
 #define O_FLASH_CS_GPIO_Port GPIOD
-#define I_RPI_11_Pin GPIO_PIN_8
-#define I_RPI_11_GPIO_Port GPIOC
-#define KEY0_Pin GPIO_PIN_9
-#define KEY0_GPIO_Port GPIOC
-#define KEY0_EXTI_IRQn EXTI4_15_IRQn
+#define SPI_MISO_Pin GPIO_PIN_11
+#define SPI_MISO_GPIO_Port GPIOA
+#define SPI_MOSI_Pin GPIO_PIN_12
+#define SPI_MOSI_GPIO_Port GPIOA
+#define SPI_CS_Pin GPIO_PIN_15
+#define SPI_CS_GPIO_Port GPIOA
+#define RPI_11_Pin GPIO_PIN_8
+#define RPI_11_GPIO_Port GPIOC
+#define RPI_12_Pin GPIO_PIN_9
+#define RPI_12_GPIO_Port GPIOC
 #define O_LIDAR_M_Pin GPIO_PIN_0
 #define O_LIDAR_M_GPIO_Port GPIOD
 #define O_BUS_RESET_Pin GPIO_PIN_1
@@ -147,9 +153,27 @@ void Error_Handler(void);
 #define O_L_RST_6_GPIO_Port GPIOB
 #define O_L_RST_7_Pin GPIO_PIN_7
 #define O_L_RST_7_GPIO_Port GPIOB
-#define RST_Pin GPIO_PIN_10
-#define RST_GPIO_Port GPIOC
+#define RPI_13_Pin GPIO_PIN_10
+#define RPI_13_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
+
+#define LCD_CS_Port								RPI_CS0_GPIO_Port
+#define LCD_CS_PIN								RPI_CS0_Pin
+
+#define LCD_DC_Port								RPI_15_GPIO_Port
+#define LCD_DC_PIN								RPI_15_Pin
+
+#define	LCD_RST_Port							RPI_13_GPIO_Port
+#define	LCD_RST_PIN								RPI_13_Pin
+
+#define	KEY0_GPIO_Port							RPI_12_GPIO_Port
+#define	KEY0_Pin								RPI_12_Pin
+
+#define	KEY1_GPIO_Port							RPI_16_GPIO_Port
+#define	KEY1_Pin								RPI_16_Pin
+
+#define	KEY2_GPIO_Port							RPI_18_GPIO_Port
+#define	KEY2_Pin								RPI_18_Pin
 
 /* USER CODE END Private defines */
 
