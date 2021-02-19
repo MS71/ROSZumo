@@ -3,3 +3,6 @@ fw/stm32/RemoteSystemsTempFiles/
 fw/stm32/zumo_tb/Debug/
 hw/*.*#*
 *~
+install
+log
+build

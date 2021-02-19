@@ -49,6 +49,10 @@ uint8_t buzzer_volume = 0;
 uint8_t enable_prox_sensor = 0;
 uint8_t enable_line_sensor = 0;
 
+int16_t motor_l_speed = 0;
+int16_t motor_r_speed = 0;
+uint8_t motor_speed_flag = 0;
+
 void setPwmDutyA(int val) {
   TC4H = val >> 8;
   OCR4A = 0xFF & val;
@@ -180,6 +184,13 @@ void loop()
   int16_t tmp_r = encoders.getCountsAndResetRight();
   uint16_t tmp_bat = readBatteryMillivolts();
 
+  if( motor_speed_flag != 0 )
+  {
+    motor_speed_flag = 0;
+    motors.setLeftSpeed(motor_l_speed);
+    motors.setRightSpeed(motor_r_speed);
+  }
+
 #ifdef ENABLE_LINE_SENSOR
   if( enable_line_sensor == 1 )
   {
@@ -308,10 +319,12 @@ void receiveEvent(int howMany)
         break;
       case CMD_MOTORS_SET_SPEED:
         {
-          int16_t l = MSG_INT16(&msg[0]);
-          int16_t r = MSG_INT16(&msg[2]);
-          motors.setLeftSpeed(l);
-          motors.setRightSpeed(r);
+          if ( n >= (2 + 2) )
+          {
+            motor_l_speed = MSG_INT16(&msg[0]);
+            motor_r_speed = MSG_INT16(&msg[2]);
+            motor_speed_flag = 1;
+          }
         }
         break;
       case CMD_LIDAR_SET_PWM:
