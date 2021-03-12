@@ -79,8 +79,6 @@ void Error_Handler(void);
 #define ADC1_GPIO_Port GPIOA
 #define O_LED2_Pin GPIO_PIN_2
 #define O_LED2_GPIO_Port GPIOA
-#define U2_LIDAR_RX_Pin GPIO_PIN_3
-#define U2_LIDAR_RX_GPIO_Port GPIOA
 #define O_L_RST_10_Pin GPIO_PIN_4
 #define O_L_RST_10_GPIO_Port GPIOA
 #define SPI_CLK_Pin GPIO_PIN_5

@@ -38,7 +38,6 @@
         * EXTI
      PC2   ------> SPI2_MISO
      PC3   ------> SPI2_MOSI
-     PA3   ------> USART2_RX
      PC4   ------> USART1_TX
      PC5   ------> USART1_RX
      PB0   ------> USART3_RX
@@ -101,14 +100,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = U2_LIDAR_RX_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF1_USART2;
-  HAL_GPIO_Init(U2_LIDAR_RX_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin */
   GPIO_InitStruct.Pin = RPI_CS0_Pin|RPI_CS1_Pin;

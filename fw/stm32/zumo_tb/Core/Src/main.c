@@ -24,6 +24,7 @@
 #include "i2c.h"
 #include "iwdg.h"
 #include "lptim.h"
+#include "usart.h"
 #include "rtc.h"
 #include "spi.h"
 #include "tim.h"
@@ -130,6 +131,7 @@ int main(void)
   MX_LPTIM1_Init();
   MX_IWDG_Init();
   MX_I2C1_Init();
+  MX_LPUART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   __HAL_RCC_PWR_CLK_ENABLE();
@@ -202,8 +204,8 @@ int main(void)
   API_I2C1_u8Set(I2C_REG_TB_U8_WIFIFST,0x00);
   API_I2C1_u32Set(I2C_REG_TB_U32_IPADDR,0x00000000);
 
-  //HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
-  //setPWM(&htim16, TIM_CHANNEL_1, 10000, 7000);
+  HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
+  setPWM(&htim16, TIM_CHANNEL_1, 10000, 1500);
 
 
 #if 0
@@ -366,9 +368,10 @@ void SystemClock_Config(void)
   }
   /** Initializes the peripherals clocks
   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1
-                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_ADC
-                              |RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPUART1
+                              |RCC_PERIPHCLK_LPTIM1|RCC_PERIPHCLK_I2C1
+                              |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_TIM1;
+  PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
   PeriphClkInit.Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI;
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_HSI;
