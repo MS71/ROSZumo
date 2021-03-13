@@ -45,6 +45,8 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+#define ENABLE_SEMI_PRINTF
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -76,18 +78,97 @@ void vUpdateRPIGPIOs();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void setPWM(TIM_HandleTypeDef* timer, uint32_t channel, uint16_t period, uint16_t pulse)
-{
-	HAL_TIM_PWM_Stop(timer, channel);    // stop generation of pwm
-	TIM_OC_InitTypeDef sConfigOC;
-	timer->Init.Period = period;           // set the period duration
-	HAL_TIM_PWM_Init(timer);  // reinititialise with new period value
-	sConfigOC.OCMode = TIM_OCMODE_PWM1;
-	sConfigOC.Pulse = pulse;              // set the pulse duration
-	sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-	sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-	HAL_TIM_PWM_ConfigChannel(timer, &sConfigOC, channel);
-	HAL_TIM_PWM_Start(timer, channel);   // start pwm generation}
+/* Buffer used for reception */
+uint8_t ldx_rxbuf;
+uint8_t lds_frmidx = 0;
+uint8_t lds_frm[22];
+
+
+/**
+  * @brief  Rx Transfer completed callback
+  * @param  UartHandle: UART handle
+  * @note   This example shows a simple way to report end of DMA Rx transfer, and
+  *         you can add your own implementation.
+  * @retval None
+  */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	/*
+	22 Bytes: <start> <index> <speed_L> <speed_H> [Data 0] [Data 1] [Data 2] [Data 3] <checksum_L> <checksum_H>
+
+	start is always 0xFA
+	index is the index byte in the 90 packets, going from 0xA0 (packet 0, readings 0 to 3) to 0xF9 (packet 89, readings 356 to 359).
+	speed is a two-byte information, little-endian. It represents the speed, in 64th of RPM (aka value in RPM represented in fixed point, with 6 bits used for the decimal part).
+	[Data 0] to [Data 3] are the 4 readings. Each one is 4 bytes long, and organized as follows :
+
+	`byte 0 : <distance 7:0>`
+	`byte 1 : <„invalid data“ flag> <„strength warning“ flag> <distance 13:8>`
+	`byte 2 : <signal strength 7:0>`
+	`byte 3 : <signal strength 15:8>`
+	 */
+
+	lds_frm[lds_frmidx] = ldx_rxbuf;
+	if( lds_frm[0] == 0xFA )
+	{
+		lds_frmidx++;
+	}
+	if( lds_frmidx == 22 )
+	{
+		uint32_t chk32 = 0;
+		int i;
+		for(i=0; i<10; i++)
+		{
+		    chk32 = (chk32 << 1) + (lds_frm[2*i+0]|lds_frm[2*i+1]<<8);
+		}
+		chk32 = (chk32 & 0x7FFF) + (chk32 >> 15);
+		chk32 &= 0x7FFF;
+		if( ((chk32>>0)&0xff) == lds_frm[20] && ((chk32>>8)&0xff) == lds_frm[21] )
+		{
+			uint8_t index = lds_frm[1];
+			double speed = (lds_frm[2] | lds_frm[3]<<8)/64.0;
+			struct
+			{
+				uint8_t  distance;
+				uint8_t  invalid;
+				uint8_t  strength_warning;
+				uint16_t signal;
+			} data[4];
+			if( speed < 300.0 )
+			{
+				if( htim16.Instance->CCR1 < 10000 )
+					htim16.Instance->CCR1++;
+			}
+			else if( speed > 300.0 )
+			{
+				if( htim16.Instance->CCR1 > 1500 )
+					htim16.Instance->CCR1--;
+			}
+			for(i=0;i<4;i++)
+			{
+				data[i].distance = (lds_frm[4+4*i+0] | (lds_frm[4+4*i+1]<<8))&0x3fff;
+				data[i].invalid = (lds_frm[4+4*i+1]>>7)&1;
+				data[i].strength_warning = (lds_frm[4+4*i+1]>>6)&1;
+				data[i].signal = lds_frm[4+4*i+2] + lds_frm[4+4*i+3]<<8;
+			}
+			if( index == 0xA0 )
+			{
+				printf("0x%02x idx=%02x speed=%3.0f pwm=%d (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) \n",
+						lds_frm[0],
+						index,
+						speed,htim16.Instance->CCR1,
+						data[0].distance,data[0].invalid,data[0].strength_warning,data[0].signal,
+						data[1].distance,data[1].invalid,data[1].strength_warning,data[1].signal,
+						data[2].distance,data[2].invalid,data[2].strength_warning,data[2].signal,
+						data[3].distance,data[3].invalid,data[3].strength_warning,data[3].signal);
+			}
+		}
+		lds_frm[0] = 0;
+		lds_frmidx = 0;
+	}
+
+	if (HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)&ldx_rxbuf, 1) != HAL_OK)
+	{
+		Error_Handler();
+	}
 }
 
 /* USER CODE END 0 */
@@ -205,8 +286,13 @@ int main(void)
   API_I2C1_u32Set(I2C_REG_TB_U32_IPADDR,0x00000000);
 
   HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
-  setPWM(&htim16, TIM_CHANNEL_1, 10000, 1500);
 
+#if 1
+  if (HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)&ldx_rxbuf, 1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+#endif
 
 #if 0
 	HAL_Delay(500);
@@ -225,6 +311,39 @@ int main(void)
 	//printf("main() ...\n");
 	while (1)
 	{
+#if 0
+		{
+			uint8_t buf;
+			int n = 0;
+			while( HAL_OK == HAL_UART_Receive(&hlpuart1, &buf, 1, 1 ) )
+			{
+				printf("%02x",buf);
+				n++;
+			}
+			if(n > 0 )
+			{
+				printf("\n");
+			}
+		}
+#endif
+
+#if 0
+		if( bRxBuffer_flag == 1 )
+		{
+			bRxBuffer_flag = 0;
+			printf("%02x%02x%02x%02x%02x%02x%02x%02x\n",
+					bRxBuffer[0],
+					bRxBuffer[1],
+					bRxBuffer[2],
+					bRxBuffer[3],
+					bRxBuffer[4],
+					bRxBuffer[5],
+					bRxBuffer[6],
+					bRxBuffer[7]);
+		}
+
+#endif
+
 #if 0
 	{
 	    GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -371,7 +490,7 @@ void SystemClock_Config(void)
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPUART1
                               |RCC_PERIPHCLK_LPTIM1|RCC_PERIPHCLK_I2C1
                               |RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_TIM1;
-  PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
+  PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_HSI;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_SYSCLK;
   PeriphClkInit.Lptim1ClockSelection = RCC_LPTIM1CLKSOURCE_LSI;
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_HSI;
