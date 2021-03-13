@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : LPTIM.h
-  * Description        : This file provides code for the configuration
-  *                      of the LPTIM instances.
+  * @file    lptim.h
+  * @brief   This file contains all the function prototypes for
+  *          the lptim.c file
   ******************************************************************************
   * @attention
   *
@@ -17,10 +17,11 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __lptim_H
-#define __lptim_H
+#ifndef __LPTIM_H__
+#define __LPTIM_H__
+
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -45,14 +46,7 @@ void MX_LPTIM1_Init(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ lptim_H */
 
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
+#endif /* __LPTIM_H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

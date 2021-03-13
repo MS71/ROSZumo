@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : LPTIM.c
-  * Description        : This file provides code for the configuration
-  *                      of the LPTIM instances.
+  * @file    lptim.c
+  * @brief   This file provides code for the configuration
+  *          of the LPTIM instances.
   ******************************************************************************
   * @attention
   *
@@ -30,6 +30,13 @@ LPTIM_HandleTypeDef hlptim1;
 void MX_LPTIM1_Init(void)
 {
 
+  /* USER CODE BEGIN LPTIM1_Init 0 */
+
+  /* USER CODE END LPTIM1_Init 0 */
+
+  /* USER CODE BEGIN LPTIM1_Init 1 */
+
+  /* USER CODE END LPTIM1_Init 1 */
   hlptim1.Instance = LPTIM1;
   hlptim1.Init.Clock.Source = LPTIM_CLOCKSOURCE_APBCLOCK_LPOSC;
   hlptim1.Init.Clock.Prescaler = LPTIM_PRESCALER_DIV32;
@@ -43,6 +50,9 @@ void MX_LPTIM1_Init(void)
   {
     Error_Handler();
   }
+  /* USER CODE BEGIN LPTIM1_Init 2 */
+
+  /* USER CODE END LPTIM1_Init 2 */
 
 }
 
