@@ -45,7 +45,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-#define ENABLE_SEMI_PRINTF
+//#define ENABLE_SEMI_PRINTF
 
 /* USER CODE END PTD */
 
@@ -82,7 +82,22 @@ void vUpdateRPIGPIOs();
 uint8_t ldx_rxbuf;
 uint8_t lds_frmidx = 0;
 uint8_t lds_frm[22];
-
+#define LDS_POINTS 360
+struct
+{
+	uint8_t data[4];
+} lds_data[LDS_POINTS];
+struct
+{
+	uint8_t data[4];
+} lds_data_bak[LDS_POINTS];
+uint16_t lds_data_bak_cnt = 0;
+struct
+{
+	uint8_t data[4];
+} lds_data_i2c[LDS_POINTS];
+uint16_t lds_data_i2c_cnt = 0;
+uint16_t lds_data_i2c_addr = 0;
 
 /**
   * @brief  Rx Transfer completed callback
@@ -130,25 +145,49 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 				uint8_t  distance;
 				uint8_t  invalid;
 				uint8_t  strength_warning;
-				uint16_t signal;
+				int16_t  signal;
 			} data[4];
-			if( speed < 300.0 )
+			int rpm = API_I2C1_u8Get(I2C_REG_TB_U8_LDS_SPEED);
+			if( rpm != 0 )
 			{
-				if( htim16.Instance->CCR1 < 10000 )
-					htim16.Instance->CCR1++;
-			}
-			else if( speed > 300.0 )
-			{
-				if( htim16.Instance->CCR1 > 1500 )
-					htim16.Instance->CCR1--;
+				if( speed < rpm )
+				{
+					if( htim16.Instance->CCR1 < 10000 )
+						htim16.Instance->CCR1++;
+				}
+				else if( speed > rpm )
+				{
+					if( htim16.Instance->CCR1 > 1000 )
+						htim16.Instance->CCR1--;
+				}
 			}
 			for(i=0;i<4;i++)
 			{
 				data[i].distance = (lds_frm[4+4*i+0] | (lds_frm[4+4*i+1]<<8))&0x3fff;
 				data[i].invalid = (lds_frm[4+4*i+1]>>7)&1;
 				data[i].strength_warning = (lds_frm[4+4*i+1]>>6)&1;
-				data[i].signal = lds_frm[4+4*i+2] + lds_frm[4+4*i+3]<<8;
+				data[i].signal = lds_frm[4+4*i+2] + (lds_frm[4+4*i+3]<<8);
+
+				int p = (4*(index-0xA0) + i);
+				if(p>=0 && p<LDS_POINTS )
+				{
+					lds_data[p].data[0] = lds_frm[4+4*i+0];
+					lds_data[p].data[1] = lds_frm[4+4*i+1];
+					lds_data[p].data[2] = lds_frm[4+4*i+2];
+					lds_data[p].data[3] = lds_frm[4+4*i+3];
+					if( p==(LDS_POINTS-1) )
+					{
+						memcpy(&lds_data_bak,&lds_data,sizeof(lds_data_bak));
+						lds_data_bak_cnt++;
+						if( (API_I2C1_u8Get(I2C_REG_TB_U8_INT_ENABLE)&I2C_REG_TB_U8_INT_BIT__LDS_READY) != 0 )
+						{
+							API_I2C1_u8Set(I2C_REG_TB_U8_INT_FLAGS,API_I2C1_u8Get(I2C_REG_TB_U8_INT_FLAGS)|I2C_REG_TB_U8_INT_BIT__LDS_READY);
+						}
+
+					}
+				}
 			}
+#ifdef ENABLE_SEMI_PRINTF
 			if( index == 0xA0 )
 			{
 				printf("0x%02x idx=%02x speed=%3.0f pwm=%d (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) \n",
@@ -160,6 +199,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 						data[2].distance,data[2].invalid,data[2].strength_warning,data[2].signal,
 						data[3].distance,data[3].invalid,data[3].strength_warning,data[3].signal);
 			}
+#endif
 		}
 		lds_frm[0] = 0;
 		lds_frmidx = 0;
@@ -285,6 +325,10 @@ int main(void)
   API_I2C1_u8Set(I2C_REG_TB_U8_WIFIFST,0x00);
   API_I2C1_u32Set(I2C_REG_TB_U32_IPADDR,0x00000000);
 
+  API_I2C1_u8Set(I2C_REG_TB_U8_LDS_SPEED,1);
+  API_I2C1_u8Set(I2C_REG_TB_U8_INT_ENABLE,0x00);
+  API_I2C1_u8Set(I2C_REG_TB_U8_INT_FLAGS,0x00);
+
   HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
 
 #if 1
@@ -405,6 +449,24 @@ int main(void)
 		HAL_GPIO_WritePin(O_LED2_GPIO_Port,O_LED2_Pin,GPIO_PIN_SET);
 		SystemClock_Config();
 #endif
+
+		if( API_I2C1_u8Get(I2C_REG_TB_U8_LDS_SPEED) == 0 )
+		{
+			htim16.Instance->CCR1 = 0;
+		}
+		else if( htim16.Instance->CCR1 == 0 )
+		{
+			htim16.Instance->CCR1 = 1000;
+		}
+
+		if( (API_I2C1_u8Get(I2C_REG_TB_U8_INT_FLAGS)&API_I2C1_u8Get(I2C_REG_TB_U8_INT_ENABLE)) != 0 )
+		{
+			HAL_GPIO_WritePin(O_INT_GPIO_Port,O_INT_Pin,GPIO_PIN_RESET);
+		}
+		else
+		{
+			HAL_GPIO_WritePin(O_INT_GPIO_Port,O_INT_Pin,GPIO_PIN_SET);
+		}
 
 		API_I2C1_u32Set(I2C_REG_TB_U32_LOOP_CNT,API_I2C1_u32Get(I2C_REG_TB_U32_LOOP_CNT)+1);
 
@@ -655,9 +717,58 @@ void vUpdateRPIGPIOs()
 
 }
 
+#if 0
+struct
+{
+	uint8_t data[4];
+} lds_data_bak[LDS_POINTS];
+uint16_t lds_data_bak_cnt = 0;
+struct
+{
+	uint8_t data[4];
+} lds_data_i2c[LDS_POINTS];
+uint16_t lds_data_i2c_cnt = 0;
+uint16_t lds_data_i2c_addr = 0;
+
+#endif
+
+uint8_t HAL_I2C_MemReadCB(uint8_t addr)
+{
+	if( addr == I2C_REG_TB_U8_LDS_STREAM )
+	{
+		if( lds_data_i2c_addr == 0 )
+		{
+			lds_data_i2c_cnt = lds_data_bak_cnt;
+			memcpy(&lds_data_i2c,&lds_data_bak,sizeof(lds_data_i2c));
+			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,(lds_data_i2c_addr>>8)&0xff);
+			lds_data_i2c_addr++;
+		}
+		else if( lds_data_i2c_addr == 1 )
+		{
+			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,(lds_data_i2c_addr>>0)&0xff);
+			lds_data_i2c_addr++;
+		}
+		else if( lds_data_i2c_addr>=2 && lds_data_i2c_addr< (2+(4*LDS_POINTS)) )
+		{
+			int p = (lds_data_i2c_addr-2)/4;
+			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,lds_data_i2c[p].data[(lds_data_i2c_addr-2)&3]);
+			lds_data_i2c_addr++;
+		}
+		else
+		{
+			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,0);
+		}
+	}
+	return 1;
+}
+
 void HAL_I2C_MemWriteCB(uint8_t addr)
 {
-	if( addr >= I2C_REG_TB_U16_VL53L1X_RSTREG && addr <= (I2C_REG_TB_U16_VL53L1X_RSTREG+1) )
+	if( addr == I2C_REG_TB_U8_LDS_STREAM )
+	{
+		lds_data_i2c_addr = 0;
+	}
+	else if( addr >= I2C_REG_TB_U16_VL53L1X_RSTREG && addr <= (I2C_REG_TB_U16_VL53L1X_RSTREG+1) )
 	{
 		vUpdateRSTGPIOs();
 	}

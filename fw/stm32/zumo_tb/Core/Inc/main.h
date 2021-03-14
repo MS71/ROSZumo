@@ -67,8 +67,8 @@ void Error_Handler(void);
 #define RPI_16_GPIO_Port GPIOC
 #define RPI_18_Pin GPIO_PIN_14
 #define RPI_18_GPIO_Port GPIOC
-#define I_INT_Pin GPIO_PIN_15
-#define I_INT_GPIO_Port GPIOC
+#define O_INT_Pin GPIO_PIN_15
+#define O_INT_GPIO_Port GPIOC
 #define O_CAM_PWDN_Pin GPIO_PIN_0
 #define O_CAM_PWDN_GPIO_Port GPIOC
 #define O_LED1_Pin GPIO_PIN_1

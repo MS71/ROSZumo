@@ -164,6 +164,7 @@ uint8_t transmitBuffer;
 char i2c_terminal_buffer[I2C_TERMINAL_BUFFER_SIZE] = {0};
 uint8_t i2c_terminal_buffer_wrflag = 0;
 
+uint8_t HAL_I2C_MemReadCB(uint8_t addr);
 void HAL_I2C_MemWriteCB(uint8_t addr);
 
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t addrMatchCode) {
@@ -186,7 +187,10 @@ void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t direction, uint16_t a
 		{
 			transmitBuffer = 0xff;
 		}
-		registerAddress++;
+		if( (registerAddress+1) < I2C_REG_TB_STREAM_REG_START )
+		{
+			registerAddress++;
+		}
 
 		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
 			// Error here!!! (HAL_BUSY)
@@ -205,6 +209,7 @@ void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
 	switch (transferState) {
 	case sendData:
+		HAL_I2C_MemReadCB(registerAddress);
 		if( (registerAddress) < I2C_BUFFER_SIZE )
 		{
 			transmitBuffer = API_I2C1_u8Get(registerAddress);
@@ -213,7 +218,10 @@ void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef *hi2c)
 		{
 			transmitBuffer = 0xff;
 		}
-		registerAddress++;
+		if( (registerAddress+1) < I2C_REG_TB_STREAM_REG_START )
+		{
+			registerAddress++;
+		}
 
 		if (HAL_I2C_Slave_Sequential_Transmit_IT(hi2c, &transmitBuffer, 1, I2C_NEXT_FRAME) != HAL_OK) {
 			// Error here!!! (HAL_BUSY)
@@ -247,10 +255,15 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 			i2c_terminal_buffer[I2C_TERMINAL_BUFFER_SIZE-1] = receiveBuffer;
 			i2c_terminal_buffer_wrflag = 1;
 		}
-		else if( (registerAddress>>1) < I2C_BUFFER_SIZE ) {
-			API_I2C1_u8Set(registerAddress++,receiveBuffer);
+		else if( (registerAddress>>1) < I2C_BUFFER_SIZE )
+		{
+			API_I2C1_u8Set(registerAddress,receiveBuffer);
 			i2c_buffer_wrflag[registerAddress>>3] |= (1<<(registerAddress&7));
-			HAL_I2C_MemWriteCB(registerAddress-1);
+			HAL_I2C_MemWriteCB(registerAddress);
+			if( (registerAddress+1) < I2C_REG_TB_STREAM_REG_START )
+			{
+				registerAddress++;
+			}
 		}
 		break;
 	}
@@ -299,12 +312,15 @@ uint8_t API_I2C1_u8WRFlag(uint16_t addr,uint8_t w)
 			i2c_buffer_wrflag[(addr+i)>>3] &= ~(1<<((addr+i)&7));
 		}
 		return ret;
-	} else if( addr >= I2C_REG_TB_U16_TERMINALBUFFER && addr < (I2C_REG_TB_U16_TERMINALBUFFER+I2C_TERMINAL_BUFFER_SIZE) )
+	}
+#if 0
+	else if( addr == I2C_REG_TB_U8_TERMINAL_STREAM )
 	{
 		ret = i2c_terminal_buffer_wrflag;
 		i2c_terminal_buffer_wrflag = 0;
 		return ret;
 	}
+#endif
 	return 0;
 }
 
@@ -313,10 +329,13 @@ uint8_t API_I2C1_u8Get(uint16_t addr)
 	if( addr < (I2C_BUFFER_SIZE) )
 	{
 		return i2c_buffer.u8[addr];
-	} else if( addr >= I2C_REG_TB_U16_TERMINALBUFFER && addr < (I2C_REG_TB_U16_TERMINALBUFFER+I2C_TERMINAL_BUFFER_SIZE) )
+	}
+#if 0
+	else if( addr == I2C_REG_TB_U8_TERMINAL_STREAM && addr < (I2C_REG_TB_U16_TERMINALBUFFER+I2C_TERMINAL_BUFFER_SIZE) )
     {
 		return i2c_terminal_buffer[addr-I2C_REG_TB_U16_TERMINALBUFFER];
 	}
+#endif
 	return 0;
 }
 
@@ -340,7 +359,9 @@ void API_I2C1_u8Set(uint16_t addr, uint8_t data)
 	{
 		i2c_buffer.u8[addr] = data;
 		i2c_buffer_wrflag[(addr+0)>>3] |= (1<<((addr+0)&7));
-	} else if( addr >= I2C_REG_TB_U16_TERMINALBUFFER && addr < (I2C_REG_TB_U16_TERMINALBUFFER+I2C_TERMINAL_BUFFER_SIZE) )
+	}
+#if 0
+	else if( addr >= I2C_REG_TB_U16_TERMINALBUFFER && addr < (I2C_REG_TB_U16_TERMINALBUFFER+I2C_TERMINAL_BUFFER_SIZE) )
 	{
 		int i;
 		for( i=0; i<(I2C_TERMINAL_BUFFER_SIZE-1); i++ )
@@ -350,6 +371,7 @@ void API_I2C1_u8Set(uint16_t addr, uint8_t data)
 		i2c_terminal_buffer[I2C_TERMINAL_BUFFER_SIZE-1] = data;
 		i2c_terminal_buffer_wrflag = 1;
 	}
+#endif
 }
 
 void API_I2C1_u16Set(uint16_t addr, uint16_t data)

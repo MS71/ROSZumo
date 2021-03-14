@@ -41,6 +41,7 @@ static uint32_t ui_time()
 
 static void ui_update_terminal()
 {
+#if 0
 	if( API_I2C1_u8WRFlag(I2C_REG_TB_U16_TERMINALBUFFER,1) != 0 )
 	{
 		int x = 0;
@@ -91,6 +92,7 @@ static void ui_update_terminal()
 			y -= (CHAR_HEIGHT+1);
 		} while( y > (UI_H - 18*CHAR_HEIGHT) );
 	}
+#endif
 }
 
 void ui_update(uint8_t bInit)
