@@ -79,21 +79,25 @@ void vUpdateRPIGPIOs();
 /* USER CODE BEGIN 0 */
 
 /* Buffer used for reception */
-uint8_t ldx_rxbuf;
+uint8_t lds_previdx = 0;
+uint8_t ldx_rxbuf[8];
 uint8_t lds_frmidx = 0;
 uint8_t lds_frm[22];
 #define LDS_POINTS 360
 struct
 {
+	uint8_t index;
 	uint8_t data[4];
 } lds_data[LDS_POINTS];
 struct
 {
+	uint8_t index;
 	uint8_t data[4];
 } lds_data_bak[LDS_POINTS];
 uint16_t lds_data_bak_cnt = 0;
 struct
 {
+	uint8_t index;
 	uint8_t data[4];
 } lds_data_i2c[LDS_POINTS];
 uint16_t lds_data_i2c_cnt = 0;
@@ -121,91 +125,106 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	`byte 3 : <signal strength 15:8>`
 	 */
 
-	lds_frm[lds_frmidx] = ldx_rxbuf;
-	if( lds_frm[0] == 0xFA )
+	int j;
+	for(j=0;j<sizeof(ldx_rxbuf);j++)
 	{
-		lds_frmidx++;
-	}
-	if( lds_frmidx == 22 )
-	{
-		uint32_t chk32 = 0;
-		int i;
-		for(i=0; i<10; i++)
+		lds_frm[lds_frmidx] = ldx_rxbuf[j];
+		if( lds_frm[0] == 0xFA )
 		{
-		    chk32 = (chk32 << 1) + (lds_frm[2*i+0]|lds_frm[2*i+1]<<8);
+			lds_frmidx++;
+			lds_previdx = 0xA0-1;
 		}
-		chk32 = (chk32 & 0x7FFF) + (chk32 >> 15);
-		chk32 &= 0x7FFF;
-		if( ((chk32>>0)&0xff) == lds_frm[20] && ((chk32>>8)&0xff) == lds_frm[21] )
+		if( lds_frmidx == 22 )
 		{
-			uint8_t index = lds_frm[1];
-			double speed = (lds_frm[2] | lds_frm[3]<<8)/64.0;
-			struct
+			uint32_t chk32 = 0;
+			int i;
+			for(i=0; i<10; i++)
 			{
-				uint8_t  distance;
-				uint8_t  invalid;
-				uint8_t  strength_warning;
-				int16_t  signal;
-			} data[4];
-			int rpm = API_I2C1_u8Get(I2C_REG_TB_U8_LDS_SPEED);
-			if( rpm != 0 )
-			{
-				if( speed < rpm )
-				{
-					if( htim16.Instance->CCR1 < 10000 )
-						htim16.Instance->CCR1++;
-				}
-				else if( speed > rpm )
-				{
-					if( htim16.Instance->CCR1 > 1000 )
-						htim16.Instance->CCR1--;
-				}
+			    chk32 = (chk32 << 1) + (lds_frm[2*i+0]|lds_frm[2*i+1]<<8);
 			}
-			for(i=0;i<4;i++)
+			chk32 = (chk32 & 0x7FFF) + (chk32 >> 15);
+			chk32 &= 0x7FFF;
+			if( ((chk32>>0)&0xff) == lds_frm[20] && ((chk32>>8)&0xff) == lds_frm[21] )
 			{
-				data[i].distance = (lds_frm[4+4*i+0] | (lds_frm[4+4*i+1]<<8))&0x3fff;
-				data[i].invalid = (lds_frm[4+4*i+1]>>7)&1;
-				data[i].strength_warning = (lds_frm[4+4*i+1]>>6)&1;
-				data[i].signal = lds_frm[4+4*i+2] + (lds_frm[4+4*i+3]<<8);
-
-				int p = (4*(index-0xA0) + i);
-				if(p>=0 && p<LDS_POINTS )
+				uint8_t index = lds_frm[1];
+				double speed = (lds_frm[2] | lds_frm[3]<<8)/64.0;
+				struct
 				{
-					lds_data[p].data[0] = lds_frm[4+4*i+0];
-					lds_data[p].data[1] = lds_frm[4+4*i+1];
-					lds_data[p].data[2] = lds_frm[4+4*i+2];
-					lds_data[p].data[3] = lds_frm[4+4*i+3];
-					if( p==(LDS_POINTS-1) )
+					uint8_t  distance;
+					uint8_t  invalid;
+					uint8_t  strength_warning;
+					int16_t  signal;
+				} data[4];
+				int rpm = API_I2C1_u8Get(I2C_REG_TB_U8_LDS_SPEED) * 60;
+				if( rpm != 0 )
+				{
+					if( speed < rpm )
 					{
-						memcpy(&lds_data_bak,&lds_data,sizeof(lds_data_bak));
-						lds_data_bak_cnt++;
-						if( (API_I2C1_u8Get(I2C_REG_TB_U8_INT_ENABLE)&I2C_REG_TB_U8_INT_BIT__LDS_READY) != 0 )
-						{
-							API_I2C1_u8Set(I2C_REG_TB_U8_INT_FLAGS,API_I2C1_u8Get(I2C_REG_TB_U8_INT_FLAGS)|I2C_REG_TB_U8_INT_BIT__LDS_READY);
-						}
-
+						if( htim16.Instance->CCR1 < 10000 )
+							htim16.Instance->CCR1++;
+					}
+					else if( speed > rpm )
+					{
+						if( htim16.Instance->CCR1 > 1000 )
+							htim16.Instance->CCR1--;
 					}
 				}
+				if( lds_previdx+1 == index )
+				{
+					for(i=0;i<4;i++)
+					{
+						data[i].distance = (lds_frm[4+4*i+0] | (lds_frm[4+4*i+1]<<8))&0x3fff;
+						data[i].invalid = (lds_frm[4+4*i+1]>>7)&1;
+						data[i].strength_warning = (lds_frm[4+4*i+1]>>6)&1;
+						data[i].signal = lds_frm[4+4*i+2] + (lds_frm[4+4*i+3]<<8);
+
+						int p = (4*(index-0xA0) + i);
+						if(p>=0 && p<LDS_POINTS )
+						{
+							lds_data[p].index = index;
+							lds_data[p].data[0] = lds_frm[4+4*i+0];
+							lds_data[p].data[1] = lds_frm[4+4*i+1];
+							lds_data[p].data[2] = lds_frm[4+4*i+2];
+							lds_data[p].data[3] = lds_frm[4+4*i+3];
+							if( p==((LDS_POINTS)-1) )
+							{
+								memcpy(&lds_data_bak,&lds_data,sizeof(lds_data_bak));
+								lds_data_bak_cnt++;
+								if( (API_I2C1_u8Get(I2C_REG_TB_U8_INT_ENABLE)&I2C_REG_TB_U8_INT_BIT__LDS_READY) != 0 )
+								{
+									API_I2C1_u8Set(I2C_REG_TB_U8_INT_FLAGS,API_I2C1_u8Get(I2C_REG_TB_U8_INT_FLAGS)|I2C_REG_TB_U8_INT_BIT__LDS_READY);
+								}
+
+							}
+						}
+					}
+				}
+				else
+				{
+					lds_previdx = 0x00;
+				}
+	#ifdef ENABLE_SEMI_PRINTF
+				if( index == 0xA0 )
+				{
+					printf("0x%02x idx=%02x speed=%3.0f pwm=%d (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) \n",
+							lds_frm[0],
+							index,
+							speed,htim16.Instance->CCR1,
+							data[0].distance,data[0].invalid,data[0].strength_warning,data[0].signal,
+							data[1].distance,data[1].invalid,data[1].strength_warning,data[1].signal,
+							data[2].distance,data[2].invalid,data[2].strength_warning,data[2].signal,
+							data[3].distance,data[3].invalid,data[3].strength_warning,data[3].signal);
+				}
+	#endif
 			}
-#ifdef ENABLE_SEMI_PRINTF
-			if( index == 0xA0 )
-			{
-				printf("0x%02x idx=%02x speed=%3.0f pwm=%d (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) (%d,%d,%d,%d) \n",
-						lds_frm[0],
-						index,
-						speed,htim16.Instance->CCR1,
-						data[0].distance,data[0].invalid,data[0].strength_warning,data[0].signal,
-						data[1].distance,data[1].invalid,data[1].strength_warning,data[1].signal,
-						data[2].distance,data[2].invalid,data[2].strength_warning,data[2].signal,
-						data[3].distance,data[3].invalid,data[3].strength_warning,data[3].signal);
-			}
-#endif
+			lds_frm[0] = 0;
+			lds_frmidx = 0;
+			lds_previdx = 0x00;
+			memset(&lds_data,0,sizeof(lds_data));
 		}
-		lds_frm[0] = 0;
-		lds_frmidx = 0;
 	}
 
-	if (HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)&ldx_rxbuf, 1) != HAL_OK)
+	if (HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)ldx_rxbuf, sizeof(ldx_rxbuf)) != HAL_OK)
 	{
 		Error_Handler();
 	}
@@ -331,12 +350,10 @@ int main(void)
 
   HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1);
 
-#if 1
-  if (HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)&ldx_rxbuf, 1) != HAL_OK)
+  if (HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)ldx_rxbuf, sizeof(ldx_rxbuf)) != HAL_OK)
   {
     Error_Handler();
   }
-#endif
 
 #if 0
 	HAL_Delay(500);
@@ -456,7 +473,7 @@ int main(void)
 		}
 		else if( htim16.Instance->CCR1 == 0 )
 		{
-			htim16.Instance->CCR1 = 1000;
+			htim16.Instance->CCR1 = 2000;
 		}
 
 		if( (API_I2C1_u8Get(I2C_REG_TB_U8_INT_FLAGS)&API_I2C1_u8Get(I2C_REG_TB_U8_INT_ENABLE)) != 0 )
@@ -717,21 +734,6 @@ void vUpdateRPIGPIOs()
 
 }
 
-#if 0
-struct
-{
-	uint8_t data[4];
-} lds_data_bak[LDS_POINTS];
-uint16_t lds_data_bak_cnt = 0;
-struct
-{
-	uint8_t data[4];
-} lds_data_i2c[LDS_POINTS];
-uint16_t lds_data_i2c_cnt = 0;
-uint16_t lds_data_i2c_addr = 0;
-
-#endif
-
 uint8_t HAL_I2C_MemReadCB(uint8_t addr)
 {
 	if( addr == I2C_REG_TB_U8_LDS_STREAM )
@@ -740,18 +742,18 @@ uint8_t HAL_I2C_MemReadCB(uint8_t addr)
 		{
 			lds_data_i2c_cnt = lds_data_bak_cnt;
 			memcpy(&lds_data_i2c,&lds_data_bak,sizeof(lds_data_i2c));
-			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,(lds_data_i2c_addr>>8)&0xff);
+			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,(lds_data_i2c_cnt>>8)&0xff);
 			lds_data_i2c_addr++;
 		}
 		else if( lds_data_i2c_addr == 1 )
 		{
-			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,(lds_data_i2c_addr>>0)&0xff);
+			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,(lds_data_i2c_cnt>>0)&0xff);
 			lds_data_i2c_addr++;
 		}
-		else if( lds_data_i2c_addr>=2 && lds_data_i2c_addr< (2+(4*LDS_POINTS)) )
+		else if( lds_data_i2c_addr>=2 && lds_data_i2c_addr< (2+(5*LDS_POINTS)) )
 		{
-			int p = (lds_data_i2c_addr-2)/4;
-			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,lds_data_i2c[p].data[(lds_data_i2c_addr-2)&3]);
+			int p = (lds_data_i2c_addr-2)/5;
+			API_I2C1_u8Set(I2C_REG_TB_U8_LDS_STREAM,lds_data_i2c[p].data[(lds_data_i2c_addr-2)%5]);
 			lds_data_i2c_addr++;
 		}
 		else
